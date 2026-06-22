@@ -16,14 +16,13 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const supabase = createClient();
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
     if (password !== confirm) { setError('Passwords do not match.'); return; }
     if (password.length < 8) { setError('Password must be at least 8 characters.'); return; }
     setLoading(true);
+    const supabase = createClient();
     const { error: err } = await supabase.auth.updateUser({ password });
     if (err) { setError(err.message); setLoading(false); return; }
     router.push('/dashboard');

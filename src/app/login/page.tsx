@@ -29,12 +29,11 @@ function LoginForm() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const supabase = createClient();
-
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setError('');
     setLoading(true);
+    const supabase = createClient();
     const { error: err } = await supabase.auth.signInWithPassword({ email, password });
     if (err) {
       setError(err.message);
@@ -47,6 +46,7 @@ function LoginForm() {
 
   async function handleGoogle() {
     setGoogleLoading(true);
+    const supabase = createClient();
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: `${window.location.origin}/auth/callback?next=${next}` },

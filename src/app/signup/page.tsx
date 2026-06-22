@@ -28,14 +28,13 @@ export default function SignupPage() {
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
 
-  const supabase = createClient();
-
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
     setError('');
     if (password !== confirm) { setError('Passwords do not match.'); return; }
     if (password.length < 8) { setError('Password must be at least 8 characters.'); return; }
     setLoading(true);
+    const supabase = createClient();
     const { error: err } = await supabase.auth.signUp({
       email,
       password,
@@ -47,6 +46,7 @@ export default function SignupPage() {
 
   async function handleGoogle() {
     setGoogleLoading(true);
+    const supabase = createClient();
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: `${window.location.origin}/auth/callback` },
