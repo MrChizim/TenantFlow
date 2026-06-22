@@ -1,26 +1,230 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --gold:        #C4992A;
+  --gold-2:      #E8C94A;
+  --gold-dim:    #F0E0A0;
+  --gold-tint:   #FDF8EC;
+  --gold-border: #F0E0A0;
+
+  --page:        #F7F6F3;
+  --surface:     #FFFFFF;
+  --surface-2:   #F2F1EE;
+  --surface-3:   #E8E7E3;
+
+  --line:        #ECEAE5;
+  --line-2:      #DDD9D0;
+
+  --text-1:      #1C1B18;
+  --text-2:      #6B6860;
+  --text-3:      #A8A59E;
+
+  --green:       #1A7F4B;
+  --green-tint:  #F0FAF5;
+  --green-line:  #C3E9D5;
+
+  --amber:       #B45309;
+  --amber-tint:  #FFFBF0;
+  --amber-line:  #FCD88A;
+
+  --red:         #C0392B;
+  --red-tint:    #FEF3F2;
+  --red-line:    #F9BDBA;
+
+  --blue:        #2563EB;
+  --blue-tint:   #EFF6FF;
+  --blue-line:   #BFDBFE;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+html { font-size: 15px; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--page);
+  color: var(--text-1);
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-weight: 400;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 99px; }
+
+/* Typography */
+.serif { font-family: 'Inter', sans-serif; }
+
+/* Surfaces */
+.surface {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+}
+
+.surface-sm {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+/* Interactive surface */
+.surface-btn {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.12s;
+}
+.surface-btn:hover {
+  border-color: var(--line-2);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  transform: translateY(-1px);
+}
+
+/* Tags / badges */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 99px;
+  letter-spacing: 0.01em;
+}
+.tag-green  { background: var(--green-tint);  color: var(--green);  border: 1px solid var(--green-line); }
+.tag-amber  { background: var(--amber-tint);  color: var(--amber);  border: 1px solid var(--amber-line); }
+.tag-red    { background: var(--red-tint);    color: var(--red);    border: 1px solid var(--red-line);   }
+.tag-gold   { background: var(--gold-tint);   color: var(--gold);   border: 1px solid var(--gold-border);}
+.tag-blue   { background: var(--blue-tint);   color: var(--blue);   border: 1px solid var(--blue-line);  }
+.tag-neutral{ background: var(--surface-2);   color: var(--text-2); border: 1px solid var(--line); }
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+.btn:active { transform: scale(0.98); }
+
+.btn-dark {
+  background: var(--text-1);
+  color: #fff;
+}
+.btn-dark:hover { opacity: 0.85; }
+
+.btn-gold {
+  background: linear-gradient(135deg, #E8C94A 0%, #C4992A 100%);
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(196,153,42,0.3);
+}
+.btn-gold:hover { opacity: 0.88; }
+
+.btn-outline {
+  background: var(--surface);
+  color: var(--text-2);
+  border: 1px solid var(--line-2);
+}
+.btn-outline:hover { background: var(--surface-2); }
+
+/* Inputs */
+.field {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: var(--text-1);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  appearance: none;
+}
+.field::placeholder { color: var(--text-3); }
+.field:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(196,153,42,0.12);
+}
+
+/* Divider */
+.hr { height: 1px; background: var(--line); }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  /* Navigation */
+  .sidebar      { display: none !important; }
+  .bottom-nav   { display: flex !important; }
+  .main-content { margin-left: 0 !important; }
+
+  /* Spacing */
+  .page-padding   { padding: 20px 16px 90px !important; }
+  .topbar-padding { padding: 0 16px !important; }
+
+  /* Page headers stack vertically */
+  .page-header     { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
+  .page-header-btn { width: 100% !important; justify-content: center !important; }
+
+  /* Tenant list */
+  .tenants-table { display: none !important; }
+  .tenants-cards { display: flex !important; }
+
+  /* Grid collapses */
+  .stat-grid-4    { grid-template-columns: repeat(2, 1fr) !important; }
+  .main-grid-2col { grid-template-columns: 1fr !important; }
+  .card-grid-2col { grid-template-columns: 1fr !important; }
+  .prop-grid      { grid-template-columns: 1fr !important; }
+
+  /* Tenant detail side-by-side → stacked */
+  .tenant-detail-grid { grid-template-columns: 1fr !important; }
+
+  /* ROI inputs + results → stacked */
+  .roi-grid { grid-template-columns: 1fr !important; }
+
+  /* ROI metric 2×2 cards → single column on mobile */
+  .roi-metric-grid { grid-template-columns: 1fr !important; }
+
+  /* Reports 2-col charts → 1-col */
+  .reports-grid { grid-template-columns: 1fr !important; }
+
+  /* Scrollable on mobile */
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Stat cards font size on small screens */
+  .display-num { font-size: 1.8rem !important; }
+
+  /* Surface padding tighter on mobile */
+  .surface { border-radius: 16px !important; }
+}
+
+/* Label */
+.eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* Number display */
+.display-num {
+  font-family: 'Inter', sans-serif;
+  font-size: 2.4rem;
+  font-weight: 400;
+  line-height: 1;
+  color: var(--text-1);
 }

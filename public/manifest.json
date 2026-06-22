@@ -1,0 +1,19 @@
+{
+  "name": "TenantFlow",
+  "short_name": "TenantFlow",
+  "description": "Property management for Nigerian landlords",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F7F6F3",
+  "theme_color": "#1C1B18",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "business", "utilities"]
+}
