@@ -4,11 +4,26 @@ import AuthProvider from "@/components/providers/AuthProvider";
 
 export const metadata: Metadata = {
   title: "TenantFlow — Property Management for Nigerian Landlords",
-  description: "Track tenants, automate lease renewal reminders, and manage your properties with clarity. Built for Nigeria.",
-  icons: { icon: '/favicon.svg' },
+  description: "Track tenants, log payments, and know exactly who owes you. Built for the way Nigerians actually rent — no lease contracts required.",
+  icons: {
+    icon: '/logo.png',
+    apple: '/logo.png',
+  },
   manifest: '/manifest.json',
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'TenantFlow' },
   other: { 'mobile-web-app-capable': 'yes' },
+  openGraph: {
+    title: 'TenantFlow — Property Management for Nigerian Landlords',
+    description: 'Track tenants, log payments, and know exactly who owes you. Built for the way Nigerians actually rent.',
+    images: [{ url: '/logo.png', width: 1080, height: 1080, alt: 'TenantFlow' }],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'TenantFlow — Property Management for Nigerian Landlords',
+    description: 'Track tenants, log payments, and know exactly who owes you. Built for Nigeria.',
+    images: ['/logo.png'],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
