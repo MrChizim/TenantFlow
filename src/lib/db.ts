@@ -101,9 +101,16 @@ export async function createTenant(
   data: Omit<Tenant, 'id' | 'created_at' | 'status' | 'property'>,
   properties: Property[]
 ): Promise<{ tenant: Tenant; installments: PaymentInstallment[] }> {
+  const insertData = {
+    ...data,
+    user_id: userId,
+    lease_start: data.lease_start || null,
+    lease_end: data.lease_end || null,
+    payment_schedule: data.payment_schedule || null,
+  };
   const { data: row, error } = await client
     .from('tenants')
-    .insert({ ...data, user_id: userId })
+    .insert(insertData)
     .select()
     .single();
   if (error) throw error;
