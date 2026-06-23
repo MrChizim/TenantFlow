@@ -212,7 +212,7 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
                   <div style={{ width: 30, height: 30, borderRadius: 9, background: 'var(--gold-tint)', border: '1px solid var(--gold-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon size={13} color="var(--gold)" /></div>
                   <div style={{ minWidth: 0 }}>
                     <p className="eyebrow" style={{ marginBottom: 3 }}>{label}</p>
-                    <p style={{ fontSize: 13.5, color: 'var(--text-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</p>
+                    <p style={{ fontSize: 13.5, color: 'var(--text-1)', wordBreak: 'break-word' }}>{value}</p>
                   </div>
                 </div>
               ))}

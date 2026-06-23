@@ -45,7 +45,6 @@ export default function EditTenantPage({ params }: { params: Promise<{ id: strin
     whatsapp: tenant?.whatsapp ?? '', nin: tenant?.nin ?? '',
     property_id: tenant?.property_id ?? '', unit: tenant?.unit ?? '',
     rent_amount: String(tenant?.rent_amount ?? ''),
-    lease_start: tenant?.lease_start ?? '', lease_end: tenant?.lease_end ?? '',
   });
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
 
@@ -68,7 +67,6 @@ export default function EditTenantPage({ params }: { params: Promise<{ id: strin
         whatsapp: form.whatsapp || form.phone,
         nin: form.nin, property_id: form.property_id, unit: form.unit,
         rent_amount: Number(form.rent_amount),
-        lease_start: form.lease_start, lease_end: form.lease_end,
       });
       addNotification({ title: 'Tenant updated', body: `${form.first_name} ${form.last_name}'s details have been updated.` });
       router.push(`/tenants/${id}`);
@@ -102,7 +100,7 @@ export default function EditTenantPage({ params }: { params: Promise<{ id: strin
           <Field label="NIN" value={form.nin} onChange={v => set('nin', v)} placeholder="12345678901" />
         </Section>
 
-        <Section title="Lease details">
+        <Section title="Property & rent">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <label className="eyebrow">Property *</label>
             <select className="field" value={form.property_id} onChange={e => set('property_id', e.target.value)} required>
@@ -110,14 +108,10 @@ export default function EditTenantPage({ params }: { params: Promise<{ id: strin
               {properties.map(p => <option key={p.id} value={p.id}>{p.name} — {p.city}</option>)}
             </select>
           </div>
-          <Field label="Unit / Flat" value={form.unit} onChange={v => set('unit', v)} placeholder="Flat 1A" required />
+          <Field label="Unit / Flat" value={form.unit} onChange={v => set('unit', v)} placeholder="e.g. 3 Bedroom Flat, Self Contain" required />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <label className="eyebrow">Annual rent (₦) *</label>
-            <input type="number" className="field" value={form.rent_amount} onChange={e => set('rent_amount', e.target.value)} placeholder="1800000" required />
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-            <Field label="Lease start" value={form.lease_start} onChange={v => set('lease_start', v)} type="date" required />
-            <Field label="Lease end" value={form.lease_end} onChange={v => set('lease_end', v)} type="date" required />
+            <label className="eyebrow">Annual rent (₦)</label>
+            <input type="number" className="field" value={form.rent_amount} onChange={e => set('rent_amount', e.target.value)} placeholder="1800000" />
           </div>
         </Section>
 
