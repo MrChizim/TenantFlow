@@ -9,72 +9,17 @@ import { createClient } from '@/lib/supabase/client';
 import { ALL_STATES, getCities } from '@/lib/nigeria';
 import type { PropertyType } from '@/types';
 
-const PROPERTY_TYPE_GROUPS: { group: string; types: { value: PropertyType; label: string }[] }[] = [
-  {
-    group: 'Flats & Apartments',
-    types: [
-      { value: 'self_contain', label: 'Self Contain' },
-      { value: 'room_and_parlour', label: 'Room & Parlour' },
-      { value: 'mini_flat', label: 'Mini Flat' },
-      { value: 'studio', label: 'Studio Apartment' },
-      { value: '1_bedroom_flat', label: '1 Bedroom Flat' },
-      { value: '2_bedroom_flat', label: '2 Bedroom Flat' },
-      { value: '3_bedroom_flat', label: '3 Bedroom Flat' },
-      { value: '4_bedroom_flat', label: '4 Bedroom Flat' },
-      { value: '5_bedroom_flat', label: '5 Bedroom Flat' },
-    ],
-  },
-  {
-    group: 'Bungalows',
-    types: [
-      { value: '2_bedroom_bungalow', label: '2 Bedroom Bungalow' },
-      { value: '3_bedroom_bungalow', label: '3 Bedroom Bungalow' },
-      { value: '4_bedroom_bungalow', label: '4 Bedroom Bungalow' },
-    ],
-  },
-  {
-    group: 'Duplexes & Houses',
-    types: [
-      { value: '3_bedroom_duplex', label: '3 Bedroom Duplex' },
-      { value: '4_bedroom_duplex', label: '4 Bedroom Duplex' },
-      { value: '5_bedroom_duplex', label: '5 Bedroom Duplex' },
-      { value: 'terraced_house', label: 'Terraced House' },
-      { value: 'semi_detached', label: 'Semi-Detached' },
-      { value: 'fully_detached', label: 'Fully Detached' },
-      { value: 'penthouse', label: 'Penthouse' },
-      { value: 'boys_quarters', label: "Boy's Quarters" },
-    ],
-  },
-  {
-    group: 'Commercial',
-    types: [
-      { value: 'shop', label: 'Shop' },
-      { value: 'office_space', label: 'Office Space' },
-      { value: 'warehouse', label: 'Warehouse' },
-      { value: 'plaza', label: 'Plaza / Shopping Complex' },
-      { value: 'showroom', label: 'Showroom' },
-    ],
-  },
-  {
-    group: 'Land',
-    types: [
-      { value: 'land_residential', label: 'Residential Land' },
-      { value: 'land_commercial', label: 'Commercial Land' },
-      { value: 'farm_land', label: 'Farm Land' },
-    ],
-  },
-  {
-    group: 'Short Let / Airbnb',
-    types: [
-      { value: 'short_let', label: 'Short Let / Airbnb' },
-    ],
-  },
-  {
-    group: 'Other',
-    types: [
-      { value: 'other', label: 'Other / Custom' },
-    ],
-  },
+const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
+  { value: 'self_contain',     label: 'Self Contain / Room & Parlour' },
+  { value: 'mini_flat',        label: 'Mini Flat / Studio' },
+  { value: '1_bedroom_flat',   label: 'Flat (1–5 bedroom)' },
+  { value: '3_bedroom_bungalow', label: 'Bungalow' },
+  { value: '3_bedroom_duplex', label: 'Duplex / Storey Building' },
+  { value: 'fully_detached',   label: 'Detached / Semi-Detached House' },
+  { value: 'shop',             label: 'Shop / Office / Commercial' },
+  { value: 'land_residential', label: 'Land' },
+  { value: 'short_let',        label: 'Short Let / Airbnb' },
+  { value: 'other',            label: 'Other — describe below' },
 ];
 
 function Field({ label, value, onChange, placeholder, required, type = 'text', prefix, sub }: {
@@ -227,13 +172,20 @@ export default function NewPropertyPage() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <label className="eyebrow">City *</label>
-              {cities.length > 0 ? (
-                <select className="field" value={form.city} onChange={e => set('city', e.target.value)} required>
-                  <option value="">Select city</option>
-                  {cities.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              ) : (
-                <input className="field" value={form.city} onChange={e => set('city', e.target.value)} placeholder={form.state ? 'Enter city' : 'Select state first'} required disabled={!form.state} style={!form.state ? { opacity: 0.5 } : undefined} />
+              <input
+                className="field"
+                value={form.city}
+                onChange={e => set('city', e.target.value)}
+                placeholder={form.state ? 'Type or pick city' : 'Select state first'}
+                required
+                disabled={!form.state}
+                style={!form.state ? { opacity: 0.5 } : undefined}
+                list="city-suggestions"
+              />
+              {cities.length > 0 && (
+                <datalist id="city-suggestions">
+                  {cities.map(c => <option key={c} value={c} />)}
+                </datalist>
               )}
             </div>
           </div>
@@ -242,11 +194,7 @@ export default function NewPropertyPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <label className="eyebrow">Property type *</label>
               <select className="field" value={form.type} onChange={e => set('type', e.target.value)} required>
-                {PROPERTY_TYPE_GROUPS.map(g => (
-                  <optgroup key={g.group} label={g.group}>
-                    {g.types.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                  </optgroup>
-                ))}
+                {PROPERTY_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
             </div>
             <Field label="Total units" type="number" value={form.total_units} onChange={v => set('total_units', v)} required />
