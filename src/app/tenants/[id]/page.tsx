@@ -2,18 +2,30 @@
 
 import { use, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Phone, Mail, MessageCircle, MapPin, RefreshCw, CheckCircle2, Banknote, Pencil, Clock, FileText, AlertCircle, TrendingUp, Trash2, StickyNote, Check, X } from 'lucide-react';
+import { ArrowLeft, Phone, Mail, MessageCircle, MapPin, CheckCircle2, Banknote, Pencil, FileText, TrendingUp, Trash2, StickyNote, Check, X, PlusCircle, Calendar } from 'lucide-react';
 import { formatNaira, formatDate, daysUntil } from '@/lib/utils';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { useStore } from '@/lib/store';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
-const scheduleLabel: Record<string, string> = { annual: 'Annual', biannual: 'Bi-annual', quarterly: 'Quarterly', monthly: 'Monthly' };
+const DURATIONS = [
+  { label: '1 year', months: 12 },
+  { label: '2 years', months: 24 },
+  { label: '6 months', months: 6 },
+  { label: '3 months', months: 3 },
+  { label: 'Custom', months: 0 },
+];
 
-function addOneYear(dateStr: string): string {
+const METHODS = [
+  { value: 'bank_transfer', label: 'Bank transfer' },
+  { value: 'cash', label: 'Cash' },
+  { value: 'online', label: 'Online / POS' },
+];
+
+function addMonths(dateStr: string, months: number): string {
   const d = new Date(dateStr);
-  d.setFullYear(d.getFullYear() + 1);
+  d.setMonth(d.getMonth() + months);
   return d.toISOString().split('T')[0];
 }
 
@@ -23,20 +35,28 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
   const tenants = useStore(s => s.tenants);
   const updateTenantRent = useStore(s => s.updateTenantRent);
   const renewTenantLease = useStore(s => s.renewTenantLease);
-  const markInstallmentPaid = useStore(s => s.markInstallmentPaid);
   const deleteTenant = useStore(s => s.deleteTenant);
   const addNotification = useStore(s => s.addNotification);
-  const allInstallments = useStore(s => s.installments);
-
   const updateTenant = useStore(s => s.updateTenant);
-  const [markingPaid, setMarkingPaid] = useState<string | null>(null);
+
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showRentModal, setShowRentModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [newRent, setNewRent] = useState('');
-  const [rentNote, setRentNote] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesValue, setNotesValue] = useState('');
+  const [newRent, setNewRent] = useState('');
+  const [rentNote, setRentNote] = useState('');
+
+  // Payment modal state
+  const [payAmount, setPayAmount] = useState('');
+  const [payDurationMonths, setPayDurationMonths] = useState(12);
+  const [payCustomMonths, setPayCustomMonths] = useState('');
+  const [payDate, setPayDate] = useState(new Date().toISOString().split('T')[0]);
+  const [payMethod, setPayMethod] = useState<'bank_transfer' | 'cash' | 'online'>('bank_transfer');
+  const [payPartial, setPayPartial] = useState(false);
+  const [payPartialNote, setPayPartialNote] = useState('');
+  const [paySelectedDuration, setPaySelectedDuration] = useState('1 year');
 
   const tenant = tenants.find(t => t.id === id)!;
 
@@ -47,19 +67,54 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
     </div>
   );
 
-  const installments = allInstallments.filter(i => i.tenant_id === tenant.id);
-  const isInstallment = tenant.payment_schedule !== 'annual';
   const days = daysUntil(tenant.lease_end);
+  const paidUntil = tenant.lease_end;
+
   const pct = Math.min(100, Math.max(0, (() => {
     if (!tenant.lease_start || !tenant.lease_end) return 0;
     const s = new Date(tenant.lease_start).getTime();
     const e = new Date(tenant.lease_end).getTime();
     return ((Date.now() - s) / (e - s)) * 100;
   })()));
-  const totalExpected = installments.reduce((s, i) => s + i.amount, 0);
-  const totalPaid = installments.filter(i => i.paid).reduce((s, i) => s + i.amount, 0);
-  const outstanding = totalExpected - totalPaid;
-  const overdueInstallments = installments.filter(i => !i.paid && new Date(i.due_date) < new Date());
+
+  function openPaymentModal() {
+    setPayAmount(String(tenant.rent_amount));
+    setPayDurationMonths(12);
+    setPayCustomMonths('');
+    setPayDate(new Date().toISOString().split('T')[0]);
+    setPayMethod('bank_transfer');
+    setPayPartial(false);
+    setPayPartialNote('');
+    setPaySelectedDuration('1 year');
+    setShowPaymentModal(true);
+  }
+
+  async function handleRecordPayment() {
+    const finalMonths = paySelectedDuration === 'Custom' ? Number(payCustomMonths) : payDurationMonths;
+    if (!finalMonths || finalMonths < 1) return;
+    setActionLoading(true);
+    try {
+      const supabase = createClient();
+      const newLeaseStart = payDate;
+      const newLeaseEnd = addMonths(payDate, finalMonths);
+      const note = payPartial ? (payPartialNote || `Partial payment of ${formatNaira(Number(payAmount))}`) : undefined;
+      await renewTenantLease(supabase, id, newLeaseEnd);
+      // Also update lease_start and record in rent_history
+      const entry = {
+        date: payDate,
+        amount: Number(payAmount),
+        note: [
+          `Paid ${formatNaira(Number(payAmount))} — covers ${finalMonths} month${finalMonths !== 1 ? 's' : ''} (until ${formatDate(newLeaseEnd)})`,
+          payPartial ? ` · PARTIAL: ${payPartialNote || 'partial payment'}` : '',
+          ` · ${METHODS.find(m => m.value === payMethod)?.label}`,
+        ].join(''),
+      };
+      const newHistory = [...(tenant.rent_history ?? []), entry];
+      await updateTenant(supabase, id, { lease_start: newLeaseStart, rent_history: newHistory } as Parameters<typeof updateTenant>[2]);
+      addNotification({ title: 'Payment recorded', body: `${tenant.first_name} ${tenant.last_name} paid — covered until ${formatDate(newLeaseEnd)}.` });
+      setShowPaymentModal(false);
+    } finally { setActionLoading(false); }
+  }
 
   async function handleUpdateRent() {
     if (!newRent) return;
@@ -67,27 +122,9 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
     try {
       const supabase = createClient();
       await updateTenantRent(supabase, id, Number(newRent), rentNote || undefined);
-      addNotification({ title: 'Rent updated', body: `Rent for ${tenant.first_name} ${tenant.last_name} updated to ₦${Number(newRent).toLocaleString('en-NG')}/yr.` });
+      addNotification({ title: 'Rent updated', body: `Rent updated to ${formatNaira(Number(newRent))}/yr.` });
       setNewRent(''); setRentNote(''); setShowRentModal(false);
     } finally { setActionLoading(false); }
-  }
-
-  async function handleRenew() {
-    setActionLoading(true);
-    try {
-      const supabase = createClient();
-      const newLeaseEnd = addOneYear(tenant.lease_end ?? new Date().toISOString().split('T')[0]);
-      await renewTenantLease(supabase, id, newLeaseEnd);
-      addNotification({ title: 'Lease renewed', body: `${tenant.first_name} ${tenant.last_name}'s lease has been renewed to ${formatDate(newLeaseEnd)}.` });
-    } finally { setActionLoading(false); }
-  }
-
-  async function handleMarkPaid(instId: string) {
-    setMarkingPaid(instId);
-    try {
-      const supabase = createClient();
-      await markInstallmentPaid(supabase, instId, 'bank_transfer');
-    } finally { setMarkingPaid(null); }
   }
 
   async function handleDelete() {
@@ -109,11 +146,6 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
     } finally { setActionLoading(false); }
   }
 
-  function startEditingNotes() {
-    setNotesValue(tenant.notes ?? '');
-    setEditingNotes(true);
-  }
-
   return (
     <div style={{ maxWidth: 900 }}>
       {/* Header */}
@@ -127,28 +159,39 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
           <p style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 3 }}>{tenant.property?.name} · {tenant.unit}</p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-          <button onClick={() => setShowRentModal(true)} className="btn btn-outline" style={{ fontSize: 13 }}><TrendingUp size={13} /> Update rent</button>
+          <button onClick={openPaymentModal} className="btn btn-dark" style={{ fontSize: 13 }}>
+            <PlusCircle size={13} /> Record payment
+          </button>
           <Link href={`/tenants/${id}/edit`} className="btn btn-outline" style={{ textDecoration: 'none', fontSize: 13 }}><Pencil size={13} /> Edit</Link>
         </div>
       </div>
 
-      {/* Alerts */}
-      {(tenant.status === 'expiring' || tenant.status === 'expired') && (
-        <div style={{ borderRadius: 16, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 20, flexWrap: 'wrap', background: tenant.status === 'expired' ? 'var(--red-tint)' : 'var(--amber-tint)', border: `1px solid ${tenant.status === 'expired' ? 'var(--red-line)' : 'var(--amber-line)'}` }}>
+      {/* Status alerts */}
+      {tenant.status === 'no_lease' && (
+        <div style={{ borderRadius: 16, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 20, flexWrap: 'wrap', background: 'var(--surface-2)', border: '1px solid var(--line)' }}>
           <div>
-            <p style={{ fontSize: 13.5, fontWeight: 600, color: tenant.status === 'expired' ? 'var(--red)' : 'var(--amber)' }}>{tenant.status === 'expired' ? 'Lease has expired' : 'Lease expiring soon'}</p>
-            <p style={{ fontSize: 12.5, color: 'var(--text-2)', marginTop: 3 }}>{days < 0 ? `${Math.abs(days)} days overdue` : `${days} days remaining — contact tenant to renew`}</p>
+            <p style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text-2)' }}>No payment recorded yet</p>
+            <p style={{ fontSize: 12.5, color: 'var(--text-3)', marginTop: 3 }}>Record a payment to start tracking when this tenant is paid up until.</p>
           </div>
-          <button onClick={handleRenew} disabled={actionLoading} className="btn btn-dark" style={{ flexShrink: 0, fontSize: 13 }}>
-            <RefreshCw size={13} /> Renew +1 year
+          <button onClick={openPaymentModal} className="btn btn-dark" style={{ flexShrink: 0, fontSize: 13 }}>
+            <PlusCircle size={13} /> Record payment
           </button>
         </div>
       )}
 
-      {overdueInstallments.length > 0 && (
-        <div style={{ borderRadius: 16, padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, background: 'var(--red-tint)', border: '1px solid var(--red-line)' }}>
-          <AlertCircle size={18} color="var(--red)" />
-          <p style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--red)' }}>{overdueInstallments.length} overdue installment{overdueInstallments.length > 1 ? 's' : ''} · {formatNaira(overdueInstallments.reduce((s, i) => s + i.amount, 0))} outstanding</p>
+      {(tenant.status === 'expiring' || tenant.status === 'expired') && (
+        <div style={{ borderRadius: 16, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 20, flexWrap: 'wrap', background: tenant.status === 'expired' ? 'var(--red-tint)' : 'var(--amber-tint)', border: `1px solid ${tenant.status === 'expired' ? 'var(--red-line)' : 'var(--amber-line)'}` }}>
+          <div>
+            <p style={{ fontSize: 13.5, fontWeight: 600, color: tenant.status === 'expired' ? 'var(--red)' : 'var(--amber)' }}>
+              {tenant.status === 'expired' ? 'Payment has expired' : 'Payment expiring soon'}
+            </p>
+            <p style={{ fontSize: 12.5, color: 'var(--text-2)', marginTop: 3 }}>
+              {days < 0 ? `${Math.abs(days)} days overdue — tenant needs to pay` : `${days} days left — collect payment soon`}
+            </p>
+          </div>
+          <button onClick={openPaymentModal} className="btn btn-dark" style={{ flexShrink: 0, fontSize: 13 }}>
+            <PlusCircle size={13} /> Record payment
+          </button>
         </div>
       )}
 
@@ -176,79 +219,64 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
             </div>
           </div>
 
-          {/* Lease */}
+          {/* Payment status */}
           <div className="surface" style={{ padding: '22px 24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 8 }}>
-              <p style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text-1)' }}>Lease details</p>
-              {tenant.agreement_signed ? <span className="tag tag-green"><CheckCircle2 size={10} /> Signed</span> : <span className="tag tag-amber"><FileText size={10} /> Unsigned</span>}
+              <p style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text-1)' }}>Payment status</p>
+              {tenant.agreement_signed
+                ? <span className="tag tag-green"><CheckCircle2 size={10} /> Agreement signed</span>
+                : <span className="tag tag-amber"><FileText size={10} /> No agreement</span>}
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 16, marginBottom: 20 }}>
-              {[['Start', formatDate(tenant.lease_start)], ['End', formatDate(tenant.lease_end)], ['Annual rent', formatNaira(tenant.rent_amount)], ['Schedule', (tenant.payment_schedule ? scheduleLabel[tenant.payment_schedule] : undefined) ?? 'Annual']].map(([l, v]) => (
-                <div key={l}>
-                  <p className="eyebrow" style={{ marginBottom: 5 }}>{l}</p>
-                  <p style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text-1)' }}>{v}</p>
+
+            {paidUntil ? (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 16, marginBottom: 20 }}>
+                  {[
+                    ['Last paid', formatDate(tenant.lease_start)],
+                    ['Paid until', formatDate(paidUntil)],
+                    ['Annual rent', formatNaira(tenant.rent_amount)],
+                    ['Days left', days < 0 ? `${Math.abs(days)}d overdue` : `${days}d`],
+                  ].map(([l, v]) => (
+                    <div key={l}>
+                      <p className="eyebrow" style={{ marginBottom: 5 }}>{l}</p>
+                      <p style={{ fontSize: 13.5, fontWeight: 600, color: l === 'Days left' ? (days < 0 ? 'var(--red)' : days < 90 ? 'var(--amber)' : 'var(--green)') : 'var(--text-1)' }}>{v}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <p style={{ fontSize: 11.5, color: 'var(--text-3)' }}>Lease progress</p>
-                <p style={{ fontSize: 11.5, color: pct >= 100 ? 'var(--red)' : pct >= 75 ? 'var(--amber)' : 'var(--text-3)' }}>{Math.round(pct)}% elapsed</p>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <p style={{ fontSize: 11.5, color: 'var(--text-3)' }}>Payment period progress</p>
+                    <p style={{ fontSize: 11.5, color: pct >= 100 ? 'var(--red)' : pct >= 75 ? 'var(--amber)' : 'var(--text-3)' }}>{Math.round(pct)}% elapsed</p>
+                  </div>
+                  <div style={{ height: 5, borderRadius: 99, background: 'var(--surface-2)', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', borderRadius: 99, width: `${pct}%`, background: pct >= 100 ? 'var(--red)' : pct >= 75 ? 'var(--amber)' : 'linear-gradient(90deg, var(--gold), var(--gold-2))' }} />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-3)', fontSize: 13 }}>
+                <Calendar size={24} style={{ margin: '0 auto 10px', opacity: 0.4 }} />
+                No payment recorded. Use <strong>Record payment</strong> to log when this tenant paid and how long it covers.
               </div>
-              <div style={{ height: 5, borderRadius: 99, background: 'var(--surface-2)', overflow: 'hidden' }}>
-                <div style={{ height: '100%', borderRadius: 99, width: `${pct}%`, background: pct >= 100 ? 'var(--red)' : pct >= 75 ? 'var(--amber)' : 'linear-gradient(90deg, var(--gold), var(--gold-2))' }} />
-              </div>
-            </div>
+            )}
           </div>
 
-          {/* Installments */}
-          {isInstallment && installments.length > 0 && (
+          {/* Payment history */}
+          {(tenant.rent_history ?? []).length > 0 && (
             <div className="surface" style={{ padding: '22px 24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 8 }}>
-                <p style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text-1)' }}>Payment schedule</p>
-                <div style={{ display: 'flex', gap: 10, fontSize: 12, color: 'var(--text-3)' }}>
-                  <span style={{ color: 'var(--green)', fontWeight: 500 }}>{formatNaira(totalPaid)} paid</span>
-                  {outstanding > 0 && <span style={{ color: 'var(--red)', fontWeight: 500 }}>{formatNaira(outstanding)} due</span>}
-                </div>
-              </div>
-              <div style={{ marginBottom: 18 }}>
-                <div style={{ height: 6, borderRadius: 99, background: 'var(--surface-2)', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', borderRadius: 99, background: 'var(--green)', width: `${totalExpected > 0 ? (totalPaid / totalExpected) * 100 : 0}%`, transition: 'width 0.4s ease' }} />
-                </div>
-                <p style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 5 }}>{installments.filter(i => i.paid).length} of {installments.length} installments paid</p>
-              </div>
+              <p style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text-1)', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 7 }}>
+                <Banknote size={14} color="var(--gold)" /> Payment history
+              </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {installments.map(inst => {
-                  const isOverdue = !inst.paid && new Date(inst.due_date) < new Date();
-                  return (
-                    <div key={inst.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 12, background: inst.paid ? 'var(--green-tint)' : isOverdue ? 'var(--red-tint)' : 'var(--surface-2)', border: `1px solid ${inst.paid ? 'var(--green-line)' : isOverdue ? 'var(--red-line)' : 'var(--line)'}` }}>
-                      <div style={{ width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: inst.paid ? 'var(--green)' : 'transparent' }}>
-                        {inst.paid ? <CheckCircle2 size={13} color="#fff" /> : isOverdue ? <AlertCircle size={13} color="var(--red)" /> : <Clock size={13} color="var(--text-3)" />}
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-1)' }}>{formatNaira(inst.amount)}</p>
-                        <p style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 1 }}>Due {formatDate(inst.due_date)}{inst.paid && inst.paid_date ? ` · Paid ${formatDate(inst.paid_date)}` : ''}</p>
-                      </div>
-                      {!inst.paid && (
-                        <button onClick={() => handleMarkPaid(inst.id)} disabled={markingPaid === inst.id} className="btn btn-outline" style={{ fontSize: 12, padding: '5px 12px', flexShrink: 0 }}>
-                          {markingPaid === inst.id ? '...' : 'Mark paid'}
-                        </button>
-                      )}
+                {[...(tenant.rent_history ?? [])].reverse().map((h, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, padding: '12px 14px', background: 'var(--surface-2)', borderRadius: 12 }}>
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-1)' }}>{formatNaira(h.amount)}</p>
+                      {h.note && <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 3, lineHeight: 1.5 }}>{h.note}</p>}
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {!isInstallment && (
-            <div className="surface" style={{ padding: '22px 24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--green-tint)', border: '1px solid var(--green-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Banknote size={16} color="var(--green)" /></div>
-                <div>
-                  <p style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text-1)' }}>{formatNaira(tenant.rent_amount)}</p>
-                  <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 1 }}>Annual payment due on {formatDate(tenant.lease_start)}</p>
-                </div>
+                    <span style={{ fontSize: 11.5, color: 'var(--text-3)', paddingTop: 2, whiteSpace: 'nowrap', flexShrink: 0 }}>{formatDate(h.date)}</span>
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -261,9 +289,10 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {([
                 { label: 'Annual rent', value: formatNaira(tenant.rent_amount), color: 'var(--text-1)' },
-                { label: 'Days remaining', value: days < 0 ? `${Math.abs(days)}d overdue` : `${days}d`, color: days < 0 ? 'var(--red)' : days < 90 ? 'var(--amber)' : 'var(--green)' },
-                isInstallment ? { label: 'Total paid', value: formatNaira(totalPaid), color: 'var(--green)' } : null,
-                isInstallment && outstanding > 0 ? { label: 'Outstanding', value: formatNaira(outstanding), color: 'var(--red)' } : null,
+                paidUntil
+                  ? { label: 'Days left', value: days < 0 ? `${Math.abs(days)}d overdue` : `${days}d`, color: days < 0 ? 'var(--red)' : days < 90 ? 'var(--amber)' : 'var(--green)' }
+                  : { label: 'Status', value: 'No payment yet', color: 'var(--text-3)' },
+                paidUntil ? { label: 'Paid until', value: formatDate(paidUntil), color: 'var(--text-1)' } : null,
               ] as Array<{ label: string; value: string; color: string } | null>).filter(Boolean).map(row => {
                 const r = row!;
                 return (
@@ -279,8 +308,11 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
           <div className="surface" style={{ padding: '22px 24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
             <p style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text-1)', marginBottom: 14 }}>Actions</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <button onClick={openPaymentModal} className="btn btn-dark" style={{ justifyContent: 'flex-start', fontSize: 13, width: '100%' }}>
+                <PlusCircle size={13} /> Record payment
+              </button>
               <button onClick={() => setShowRentModal(true)} className="btn btn-outline" style={{ justifyContent: 'flex-start', fontSize: 13, width: '100%' }}>
-                <TrendingUp size={13} color="var(--gold)" /> Update rent
+                <TrendingUp size={13} color="var(--gold)" /> Update rent amount
               </button>
               <Link href={`/tenants/${id}/edit`} className="btn btn-outline" style={{ textDecoration: 'none', justifyContent: 'flex-start', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: '1px solid var(--line)', background: '#fff', color: 'var(--text-1)', cursor: 'pointer' }}>
                 <Pencil size={13} color="var(--text-3)" /> Edit details
@@ -300,34 +332,24 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
             <StickyNote size={14} color="var(--gold)" /> Notes
           </p>
           {!editingNotes && (
-            <button onClick={startEditingNotes} className="btn btn-outline" style={{ fontSize: 12, padding: '5px 12px' }}>
+            <button onClick={() => { setNotesValue(tenant.notes ?? ''); setEditingNotes(true); }} className="btn btn-outline" style={{ fontSize: 12, padding: '5px 12px' }}>
               <Pencil size={11} /> {tenant.notes ? 'Edit' : 'Add note'}
             </button>
           )}
         </div>
         {editingNotes ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <textarea
-              className="field"
-              value={notesValue}
-              onChange={e => setNotesValue(e.target.value)}
-              placeholder="e.g. Pays via bank transfer. Has 2 dogs. Called about leaking roof Jan 2026. Extended family lives there."
-              rows={4}
-              style={{ resize: 'vertical', lineHeight: 1.6 }}
-              autoFocus
-            />
+            <textarea className="field" value={notesValue} onChange={e => setNotesValue(e.target.value)}
+              placeholder="e.g. Pays via bank transfer. Has 2 dogs. Called about leaking roof Jan 2026."
+              rows={4} style={{ resize: 'vertical', lineHeight: 1.6 }} autoFocus />
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={handleSaveNotes} disabled={actionLoading} className="btn btn-dark" style={{ fontSize: 13 }}>
-                <Check size={13} /> Save
-              </button>
+              <button onClick={handleSaveNotes} disabled={actionLoading} className="btn btn-dark" style={{ fontSize: 13 }}><Check size={13} /> Save</button>
               {tenant.notes && (
                 <button onClick={() => { setNotesValue(''); handleSaveNotes(); }} disabled={actionLoading} className="btn btn-outline" style={{ fontSize: 13, color: 'var(--red)', borderColor: 'var(--red-line)' }}>
-                  <Trash2 size={13} /> Clear note
+                  <Trash2 size={13} /> Clear
                 </button>
               )}
-              <button onClick={() => setEditingNotes(false)} className="btn btn-outline" style={{ fontSize: 13 }}>
-                <X size={13} /> Cancel
-              </button>
+              <button onClick={() => setEditingNotes(false)} className="btn btn-outline" style={{ fontSize: 13 }}><X size={13} /> Cancel</button>
             </div>
           </div>
         ) : tenant.notes ? (
@@ -337,23 +359,95 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
         )}
       </div>
 
-      {/* Rent history */}
-      {(tenant.rent_history ?? []).length > 0 && (
-        <div className="surface" style={{ padding: '22px 24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', marginTop: 14 }}>
-          <p style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text-1)', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 7 }}><TrendingUp size={14} color="var(--gold)" /> Rent history</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {(tenant.rent_history ?? []).map((h, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, padding: '10px 14px', background: 'var(--surface-2)', borderRadius: 10 }}>
-                <div>
-                  <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-1)' }}>{formatNaira(h.amount)}/yr</p>
-                  <p style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 2 }}>{h.note ?? h.date}</p>
-                </div>
-                <span style={{ fontSize: 11.5, color: 'var(--text-3)', paddingTop: 2 }}>{h.date}</span>
+      {/* Record Payment modal */}
+      {showPaymentModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={() => setShowPaymentModal(false)}>
+          <div style={{ background: '#fff', borderRadius: 20, padding: '28px', width: '100%', maxWidth: 440, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', maxHeight: '90vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+              <div>
+                <p style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-1)' }}>Record payment</p>
+                <p style={{ fontSize: 12.5, color: 'var(--text-3)', marginTop: 2 }}>{tenant.first_name} {tenant.last_name}</p>
               </div>
-            ))}
-            <div style={{ padding: '10px 14px', background: 'var(--gold-tint)', border: '1px solid var(--gold-border)', borderRadius: 10, display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-2)' }}>Current rent</span>
-              <span style={{ fontSize: 13.5, fontWeight: 700, color: 'var(--gold)' }}>{formatNaira(tenant.rent_amount)}/yr</span>
+              <button onClick={() => setShowPaymentModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)', padding: 4 }}><X size={16} /></button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+              {/* Amount */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label className="eyebrow">Amount paid (₦) *</label>
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 13.5, color: 'var(--text-3)', pointerEvents: 'none' }}>₦</span>
+                  <input type="number" className="field" value={payAmount} onChange={e => setPayAmount(e.target.value)} placeholder={String(tenant.rent_amount)} style={{ paddingLeft: 26 }} autoFocus />
+                </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', marginTop: 2 }}>
+                  <input type="checkbox" checked={payPartial} onChange={e => setPayPartial(e.target.checked)} style={{ width: 14, height: 14, accentColor: 'var(--gold)', cursor: 'pointer' }} />
+                  <span style={{ fontSize: 12.5, color: 'var(--text-3)' }}>This is a partial payment (not the full rent)</span>
+                </label>
+                {payPartial && (
+                  <input type="text" className="field" value={payPartialNote} onChange={e => setPayPartialNote(e.target.value)} placeholder="e.g. Paid ₦300k, balance ₦200k pending" />
+                )}
+              </div>
+
+              {/* Duration */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <label className="eyebrow">Duration covered *</label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                  {DURATIONS.map(d => (
+                    <button key={d.label} type="button"
+                      onClick={() => { setPaySelectedDuration(d.label); setPayDurationMonths(d.months); }}
+                      style={{ padding: '9px 6px', borderRadius: 10, border: `1.5px solid ${paySelectedDuration === d.label ? 'var(--gold)' : 'var(--line)'}`, background: paySelectedDuration === d.label ? 'var(--gold-tint)' : '#fff', fontSize: 13, fontWeight: paySelectedDuration === d.label ? 600 : 400, color: paySelectedDuration === d.label ? 'var(--gold)' : 'var(--text-2)', cursor: 'pointer', transition: 'all 0.12s' }}>
+                      {d.label}
+                    </button>
+                  ))}
+                </div>
+                {paySelectedDuration === 'Custom' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <input type="number" className="field" value={payCustomMonths} onChange={e => setPayCustomMonths(e.target.value)} placeholder="e.g. 18" style={{ flex: 1 }} min={1} />
+                    <span style={{ fontSize: 13, color: 'var(--text-3)', whiteSpace: 'nowrap' }}>months</span>
+                  </div>
+                )}
+                {/* Preview */}
+                {(() => {
+                  const months = paySelectedDuration === 'Custom' ? Number(payCustomMonths) : payDurationMonths;
+                  if (!months || !payDate) return null;
+                  return (
+                    <p style={{ fontSize: 12.5, color: 'var(--text-3)', background: 'var(--surface-2)', padding: '8px 12px', borderRadius: 9 }}>
+                      Paid until: <strong style={{ color: 'var(--text-1)' }}>{formatDate(addMonths(payDate, months))}</strong>
+                    </p>
+                  );
+                })()}
+              </div>
+
+              {/* Date paid */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label className="eyebrow">Date received *</label>
+                <input type="date" className="field" value={payDate} onChange={e => setPayDate(e.target.value)} />
+              </div>
+
+              {/* Method */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label className="eyebrow">Payment method</label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {METHODS.map(m => (
+                    <button key={m.value} type="button"
+                      onClick={() => setPayMethod(m.value as typeof payMethod)}
+                      style={{ flex: 1, padding: '8px 4px', borderRadius: 10, border: `1.5px solid ${payMethod === m.value ? 'var(--gold)' : 'var(--line)'}`, background: payMethod === m.value ? 'var(--gold-tint)' : '#fff', fontSize: 12.5, fontWeight: payMethod === m.value ? 600 : 400, color: payMethod === m.value ? 'var(--gold)' : 'var(--text-2)', cursor: 'pointer', transition: 'all 0.12s' }}>
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 8, paddingTop: 4 }}>
+                <button
+                  onClick={handleRecordPayment}
+                  disabled={!payAmount || actionLoading || (paySelectedDuration === 'Custom' && !payCustomMonths)}
+                  className="btn btn-dark" style={{ flex: 1 }}>
+                  {actionLoading ? '...' : 'Save payment'}
+                </button>
+                <button onClick={() => setShowPaymentModal(false)} className="btn btn-outline">Cancel</button>
+              </div>
             </div>
           </div>
         </div>
@@ -363,7 +457,7 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
       {showRentModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={() => setShowRentModal(false)}>
           <div style={{ background: '#fff', borderRadius: 20, padding: '28px', width: '100%', maxWidth: 400, boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }} onClick={e => e.stopPropagation()}>
-            <p style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-1)', marginBottom: 6 }}>Update rent</p>
+            <p style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-1)', marginBottom: 6 }}>Update rent amount</p>
             <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 20 }}>Current: {formatNaira(tenant.rent_amount)}/yr</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -379,7 +473,7 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
               </div>
               <div style={{ display: 'flex', gap: 8, paddingTop: 4 }}>
                 <button onClick={handleUpdateRent} disabled={!newRent || Number(newRent) === tenant.rent_amount || actionLoading} className="btn btn-dark" style={{ flex: 1 }}>
-                  {actionLoading ? '...' : 'Save new rent'}
+                  {actionLoading ? '...' : 'Save'}
                 </button>
                 <button onClick={() => setShowRentModal(false)} className="btn btn-outline">Cancel</button>
               </div>
@@ -388,13 +482,13 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
         </div>
       )}
 
-      {/* Delete confirmation modal */}
+      {/* Delete modal */}
       {showDeleteModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={() => setShowDeleteModal(false)}>
           <div style={{ background: '#fff', borderRadius: 20, padding: '28px', width: '100%', maxWidth: 400, boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }} onClick={e => e.stopPropagation()}>
             <p style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-1)', marginBottom: 6 }}>Remove tenant?</p>
             <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 20 }}>
-              This will permanently delete <strong style={{ color: 'var(--text-1)' }}>{tenant.first_name} {tenant.last_name}</strong> and all their payment records. This cannot be undone.
+              This will permanently delete <strong style={{ color: 'var(--text-1)' }}>{tenant.first_name} {tenant.last_name}</strong> and all their records. This cannot be undone.
             </p>
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={handleDelete} disabled={actionLoading} className="btn btn-dark" style={{ flex: 1, background: 'var(--red)', borderColor: 'var(--red)' }}>
