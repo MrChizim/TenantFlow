@@ -46,5 +46,10 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Allow logged-in users to visit the homepage
+  if (user && pathname === '/home') {
+    return supabaseResponse;
+  }
+
   return supabaseResponse;
 }

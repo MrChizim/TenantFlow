@@ -54,19 +54,21 @@ export default function Sidebar({ collapsed, onToggle }: Props) {
         justifyContent: collapsed ? 'center' : 'space-between',
       }}>
         {!collapsed && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+          <Link href="/home" style={{ display: 'flex', alignItems: 'center', gap: 9, textDecoration: 'none' }}>
             <div style={{ width: 30, height: 30, borderRadius: 9, background: '#1C1B18', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <Building2 size={14} color="#fff" strokeWidth={2} />
             </div>
             <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.08rem', color: '#1C1B18', whiteSpace: 'nowrap', letterSpacing: '-0.01em' }}>
               TenantFlow
             </span>
-          </div>
+          </Link>
         )}
         {collapsed && (
-          <div style={{ width: 30, height: 30, borderRadius: 9, background: '#1C1B18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Building2 size={14} color="#fff" strokeWidth={2} />
-          </div>
+          <Link href="/home" style={{ textDecoration: 'none' }}>
+            <div style={{ width: 30, height: 30, borderRadius: 9, background: '#1C1B18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Building2 size={14} color="#fff" strokeWidth={2} />
+            </div>
+          </Link>
         )}
         {!collapsed && (
           <button onClick={onToggle} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, borderRadius: 8, display: 'flex', color: '#C8C5BE', transition: 'color 0.12s, background 0.12s' }}
