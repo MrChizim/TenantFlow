@@ -50,7 +50,7 @@ export default function ReportsPage() {
   const start = rangeStart(range);
 
   const filteredTenants = useMemo(() =>
-    tenants.filter(t => new Date(t.lease_start) >= start || new Date(t.lease_end) >= start),
+    tenants.filter(t => (t.lease_start && new Date(t.lease_start) >= start) || (t.lease_end && new Date(t.lease_end) >= start)),
     [tenants, range] // eslint-disable-line react-hooks/exhaustive-deps
   );
 

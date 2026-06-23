@@ -3,7 +3,8 @@ import type { Property, Tenant, Expense, PaymentInstallment, PaymentSchedule, Pr
 
 // ─── Status derivation ──────────────────────────────────────────────────────
 
-export function deriveStatus(leaseEnd: string): Tenant['status'] {
+export function deriveStatus(leaseEnd?: string | null): Tenant['status'] {
+  if (!leaseEnd) return 'no_lease';
   const days = Math.ceil((new Date(leaseEnd).getTime() - Date.now()) / 86400000);
   if (days < 0) return 'expired';
   if (days <= 90) return 'expiring';
@@ -115,7 +116,7 @@ export async function createTenant(
 
   // Insert installments if not annual
   let installments: PaymentInstallment[] = [];
-  if (data.payment_schedule !== 'annual') {
+  if (data.payment_schedule && data.payment_schedule !== 'annual' && data.lease_start && data.lease_end) {
     const toInsert = generateInstallments(
       tenant.id, userId, data.rent_amount, data.payment_schedule, data.lease_start, data.lease_end
     ).map(i => ({ ...i, user_id: userId }));

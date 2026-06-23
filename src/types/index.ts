@@ -1,13 +1,4 @@
-export type PropertyType =
-  | 'apartment'
-  | '1_bedroom_flat'
-  | 'self_contain'
-  | '2_bedroom_flat'
-  | '3_bedroom_flat'
-  | 'duplex'
-  | 'bungalow'
-  | 'commercial'
-  | 'land';
+export type PropertyType = 'residential' | 'commercial' | 'land';
 
 export interface Property {
   id: string;
@@ -16,6 +7,7 @@ export interface Property {
   city: string;
   state: string;
   type: PropertyType;
+  description?: string;
   total_units: number;
   image_url?: string;
   purchase_price?: number;
@@ -56,10 +48,10 @@ export interface Tenant {
   unit: string;
   rent_amount: number;
   rent_history?: RentHistoryEntry[];
-  payment_schedule: PaymentSchedule;
-  lease_start: string;
-  lease_end: string;
-  status: 'active' | 'expiring' | 'expired';
+  payment_schedule?: PaymentSchedule;
+  lease_start?: string;
+  lease_end?: string;
+  status: 'active' | 'expiring' | 'expired' | 'no_lease';
   document_url?: string;
   agreement_signed?: boolean;
   created_at: string;

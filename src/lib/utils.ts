@@ -14,7 +14,8 @@ export function formatNaira(amount: number): string {
   }).format(amount);
 }
 
-export function formatDate(date: string | Date): string {
+export function formatDate(date: string | Date | undefined | null): string {
+  if (!date) return '—';
   return new Intl.DateTimeFormat('en-NG', {
     day: 'numeric',
     month: 'short',
@@ -22,7 +23,8 @@ export function formatDate(date: string | Date): string {
   }).format(new Date(date));
 }
 
-export function daysUntil(date: string | Date): number {
+export function daysUntil(date: string | Date | undefined | null): number {
+  if (!date) return Infinity;
   const target = new Date(date);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -30,7 +32,8 @@ export function daysUntil(date: string | Date): number {
   return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-export function monthsUntil(date: string | Date): number {
+export function monthsUntil(date: string | Date | undefined | null): number {
+  if (!date) return Infinity;
   const target = new Date(date);
   const today = new Date();
   return (
@@ -39,9 +42,10 @@ export function monthsUntil(date: string | Date): number {
   );
 }
 
-export type LeaseStatus = 'active' | 'expiring' | 'expired';
+export type LeaseStatus = 'active' | 'expiring' | 'expired' | 'no_lease';
 
-export function getLeaseStatus(endDate: string | Date): LeaseStatus {
+export function getLeaseStatus(endDate: string | Date | undefined | null): LeaseStatus {
+  if (!endDate) return 'no_lease';
   const days = daysUntil(endDate);
   if (days < 0) return 'expired';
   if (days <= 90) return 'expiring';
@@ -49,5 +53,5 @@ export function getLeaseStatus(endDate: string | Date): LeaseStatus {
 }
 
 export function getStatusLabel(status: LeaseStatus): string {
-  return { active: 'Active', expiring: 'Expiring Soon', expired: 'Expired' }[status];
+  return { active: 'Active', expiring: 'Expiring Soon', expired: 'Expired', no_lease: 'No Lease' }[status];
 }

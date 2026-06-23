@@ -67,7 +67,7 @@ export default function RenewalsPage() {
     setRenewLoading(true);
     try {
       const supabase = createClient();
-      const newLeaseEnd = addOneYear(confirming.lease_end);
+      const newLeaseEnd = addOneYear(confirming.lease_end ?? new Date().toISOString().split('T')[0]);
       await renewTenantLease(supabase, confirming.id, newLeaseEnd);
       setRenewed(p => new Set([...p, confirming.id]));
       addNotification({ title: 'Lease renewed', body: `${confirming.first_name} ${confirming.last_name}'s lease extended to ${newLeaseEnd}.` });

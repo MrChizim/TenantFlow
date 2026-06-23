@@ -6,9 +6,11 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { createClient } from '@/lib/supabase/client';
-import type { PaymentSchedule } from '@/types';
 
-function Field({ label, value, onChange, placeholder, required, type = 'text' }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; required?: boolean; type?: string; }) {
+function Field({ label, value, onChange, placeholder, required, type = 'text' }: {
+  label: string; value: string; onChange: (v: string) => void;
+  placeholder?: string; required?: boolean; type?: string;
+}) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       <label className="eyebrow">{label}{required ? ' *' : ''}</label>
@@ -16,25 +18,6 @@ function Field({ label, value, onChange, placeholder, required, type = 'text' }:
     </div>
   );
 }
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="surface" style={{ padding: '24px 28px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: 18 }}>
-      <div>
-        <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.15rem', color: 'var(--text-1)', marginBottom: 14 }}>{title}</p>
-        <div style={{ height: 1, background: 'var(--line)' }} />
-      </div>
-      {children}
-    </div>
-  );
-}
-
-const scheduleOptions: { value: PaymentSchedule; label: string; sub: string }[] = [
-  { value: 'annual',    label: 'Annual',    sub: 'Full year upfront (Nigerian default)' },
-  { value: 'biannual',  label: 'Bi-annual', sub: 'Two payments per year' },
-  { value: 'quarterly', label: 'Quarterly', sub: 'Every 3 months' },
-  { value: 'monthly',   label: 'Monthly',   sub: 'Month-by-month installments' },
-];
 
 export default function NewTenantPage() {
   const router = useRouter();
@@ -44,18 +27,12 @@ export default function NewTenantPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [form, setForm] = useState({
-    first_name: '', last_name: '', email: '', phone: '', whatsapp: '', nin: '',
-    property_id: '', unit: '', rent_amount: '', lease_start: '', lease_end: '',
-    payment_schedule: 'annual' as PaymentSchedule,
-    agreement_signed: false,
+    first_name: '', last_name: '', email: '', phone: '', whatsapp: '',
+    nin: '', property_id: '', unit: '', rent_amount: '', agreement_signed: false,
   });
   const set = (k: string, v: string | boolean) => setForm(f => ({ ...f, [k]: v }));
 
-  const rentNum = Number(form.rent_amount) || 0;
-  const installmentAmounts: Record<PaymentSchedule, number> = {
-    annual: rentNum, biannual: Math.round(rentNum / 2),
-    quarterly: Math.round(rentNum / 4), monthly: Math.round(rentNum / 12),
-  };
+  const selectedProperty = properties.find(p => p.id === form.property_id);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -67,13 +44,20 @@ export default function NewTenantPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
       await addTenant(supabase, user.id, {
-        first_name: form.first_name, last_name: form.last_name,
-        email: form.email, phone: form.phone,
+        first_name: form.first_name,
+        last_name: form.last_name,
+        email: form.email || '',
+        phone: form.phone,
         whatsapp: form.whatsapp || form.phone,
-        nin: form.nin, property_id: form.property_id, unit: form.unit,
-        rent_amount: rentNum, payment_schedule: form.payment_schedule,
-        lease_start: form.lease_start, lease_end: form.lease_end,
+        nin: form.nin || undefined,
+        property_id: form.property_id,
+        unit: form.unit,
+        rent_amount: Number(form.rent_amount) || 0,
+        payment_schedule: 'annual',
+        lease_start: '',
+        lease_end: '',
         agreement_signed: form.agreement_signed,
+        rent_history: [],
       });
       addNotification({ title: 'Tenant added', body: `${form.first_name} ${form.last_name} has been added.` });
       router.push('/tenants');
@@ -84,30 +68,36 @@ export default function NewTenantPage() {
   }
 
   return (
-    <div style={{ maxWidth: 580 }}>
+    <div style={{ maxWidth: 540 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 36 }}>
         <Link href="/tenants" className="btn btn-outline" style={{ padding: '8px 10px', textDecoration: 'none' }}><ArrowLeft size={15} /></Link>
         <div>
           <h1 className="serif" style={{ fontSize: '1.6rem', color: 'var(--text-1)', letterSpacing: '-0.015em' }}>Add tenant</h1>
-          <p style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 3 }}>Fill in lease details and contact info</p>
+          <p style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 3 }}>Contact info and property assignment</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <Section title="Personal information">
+
+        {/* Personal */}
+        <div className="surface" style={{ padding: '24px 28px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <p style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--text-1)', paddingBottom: 12, borderBottom: '1px solid var(--line)' }}>Personal information</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             <Field label="First name" value={form.first_name} onChange={v => set('first_name', v)} placeholder="Emeka" required />
             <Field label="Last name" value={form.last_name} onChange={v => set('last_name', v)} placeholder="Okafor" required />
           </div>
-          <Field label="Email" value={form.email} onChange={v => set('email', v)} placeholder="emeka@gmail.com" type="email" />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             <Field label="Phone" value={form.phone} onChange={v => set('phone', v)} placeholder="08012345678" required />
-            <Field label="WhatsApp" value={form.whatsapp} onChange={v => set('whatsapp', v)} placeholder="08012345678" required />
+            <Field label="WhatsApp" value={form.whatsapp} onChange={v => set('whatsapp', v)} placeholder="Same as phone?" />
           </div>
-          <Field label="NIN" value={form.nin} onChange={v => set('nin', v)} placeholder="12345678901" />
-        </Section>
+          <Field label="Email" value={form.email} onChange={v => set('email', v)} placeholder="emeka@gmail.com" type="email" />
+          <Field label="NIN (optional)" value={form.nin} onChange={v => set('nin', v)} placeholder="12345678901" />
+        </div>
 
-        <Section title="Lease details">
+        {/* Property */}
+        <div className="surface" style={{ padding: '24px 28px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <p style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--text-1)', paddingBottom: 12, borderBottom: '1px solid var(--line)' }}>Property & unit</p>
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <label className="eyebrow">Property *</label>
             <select className="field" value={form.property_id} onChange={e => set('property_id', e.target.value)} required>
@@ -115,41 +105,55 @@ export default function NewTenantPage() {
               {properties.map(p => <option key={p.id} value={p.id}>{p.name} — {p.city}</option>)}
             </select>
           </div>
-          <Field label="Unit / Flat" value={form.unit} onChange={v => set('unit', v)} placeholder="Flat 1A" required />
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <label className="eyebrow">Annual rent (₦) *</label>
-            <input type="number" className="field" value={form.rent_amount} onChange={e => set('rent_amount', e.target.value)} placeholder="1800000" required />
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-            <Field label="Lease start" value={form.lease_start} onChange={v => set('lease_start', v)} type="date" required />
-            <Field label="Lease end" value={form.lease_end} onChange={v => set('lease_end', v)} type="date" required />
+            <label className="eyebrow">Unit / Flat *</label>
+            {selectedProperty ? (
+              <input
+                className="field"
+                value={form.unit}
+                onChange={e => set('unit', e.target.value)}
+                placeholder={`e.g. Flat 1A, Room 3, Unit B`}
+                required
+                list="unit-suggestions"
+              />
+            ) : (
+              <input className="field" value={form.unit} onChange={e => set('unit', e.target.value)} placeholder="Select a property first" disabled style={{ opacity: 0.5 }} />
+            )}
+            {selectedProperty && (
+              <datalist id="unit-suggestions">
+                {Array.from({ length: selectedProperty.total_units }, (_, i) => (
+                  <option key={i} value={`Flat ${i + 1}`} />
+                ))}
+                {['Ground Floor', 'First Floor', 'Second Floor', 'Top Floor', 'Room 1', 'Room 2', 'Room 3', 'Self Contain', 'Mini Flat'].map(v => (
+                  <option key={v} value={v} />
+                ))}
+              </datalist>
+            )}
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <label className="eyebrow">Payment schedule *</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              {scheduleOptions.map(opt => {
-                const active = form.payment_schedule === opt.value;
-                return (
-                  <button key={opt.value} type="button" onClick={() => set('payment_schedule', opt.value)} style={{ padding: '11px 14px', borderRadius: 12, textAlign: 'left', cursor: 'pointer', border: active ? '2px solid var(--gold)' : '1.5px solid var(--line-2)', background: active ? 'var(--gold-tint)' : 'var(--surface)', transition: 'all 0.12s' }}>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: active ? 'var(--gold)' : 'var(--text-1)', marginBottom: 2 }}>{opt.label}</p>
-                    <p style={{ fontSize: 11.5, color: 'var(--text-3)' }}>{rentNum > 0 ? `₦${installmentAmounts[opt.value].toLocaleString('en-NG')} each` : opt.sub}</p>
-                  </button>
-                );
-              })}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label className="eyebrow">Annual rent (₦)</label>
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', fontSize: 13.5, color: 'var(--text-3)', pointerEvents: 'none' }}>₦</span>
+              <input type="number" className="field" value={form.rent_amount} onChange={e => set('rent_amount', e.target.value)} placeholder="1800000" style={{ paddingLeft: 24 }} />
             </div>
+            <p style={{ fontSize: 12, color: 'var(--text-3)' }}>You can set payment details after adding the tenant.</p>
           </div>
 
           <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
             <input type="checkbox" checked={form.agreement_signed} onChange={e => set('agreement_signed', e.target.checked)} style={{ width: 16, height: 16, accentColor: 'var(--gold)', cursor: 'pointer' }} />
             <span style={{ fontSize: 13.5, color: 'var(--text-2)' }}>Tenancy agreement has been signed</span>
           </label>
-        </Section>
+        </div>
 
         {error && <p style={{ fontSize: 13, color: '#C0392B', background: '#FEF3F2', border: '1px solid #F9BDBA', borderRadius: 10, padding: '10px 14px' }}>{error}</p>}
+
         <div style={{ display: 'flex', gap: 10 }}>
           <button type="submit" disabled={loading} className="btn btn-dark">
-            {loading ? <span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} /> : 'Save tenant'}
+            {loading
+              ? <span style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#fff', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
+              : 'Add tenant'}
           </button>
           <Link href="/tenants" className="btn btn-outline" style={{ textDecoration: 'none' }}>Cancel</Link>
         </div>

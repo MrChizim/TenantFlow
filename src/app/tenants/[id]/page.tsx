@@ -48,6 +48,7 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
   const isInstallment = tenant.payment_schedule !== 'annual';
   const days = daysUntil(tenant.lease_end);
   const pct = Math.min(100, Math.max(0, (() => {
+    if (!tenant.lease_start || !tenant.lease_end) return 0;
     const s = new Date(tenant.lease_start).getTime();
     const e = new Date(tenant.lease_end).getTime();
     return ((Date.now() - s) / (e - s)) * 100;
@@ -72,7 +73,7 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
     setActionLoading(true);
     try {
       const supabase = createClient();
-      const newLeaseEnd = addOneYear(tenant.lease_end);
+      const newLeaseEnd = addOneYear(tenant.lease_end ?? new Date().toISOString().split('T')[0]);
       await renewTenantLease(supabase, id, newLeaseEnd);
       addNotification({ title: 'Lease renewed', body: `${tenant.first_name} ${tenant.last_name}'s lease has been renewed to ${formatDate(newLeaseEnd)}.` });
     } finally { setActionLoading(false); }
@@ -165,7 +166,7 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
               {tenant.agreement_signed ? <span className="tag tag-green"><CheckCircle2 size={10} /> Signed</span> : <span className="tag tag-amber"><FileText size={10} /> Unsigned</span>}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 16, marginBottom: 20 }}>
-              {[['Start', formatDate(tenant.lease_start)], ['End', formatDate(tenant.lease_end)], ['Annual rent', formatNaira(tenant.rent_amount)], ['Schedule', scheduleLabel[tenant.payment_schedule] ?? 'Annual']].map(([l, v]) => (
+              {[['Start', formatDate(tenant.lease_start)], ['End', formatDate(tenant.lease_end)], ['Annual rent', formatNaira(tenant.rent_amount)], ['Schedule', (tenant.payment_schedule ? scheduleLabel[tenant.payment_schedule] : undefined) ?? 'Annual']].map(([l, v]) => (
                 <div key={l}>
                   <p className="eyebrow" style={{ marginBottom: 5 }}>{l}</p>
                   <p style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text-1)' }}>{v}</p>
