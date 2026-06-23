@@ -49,6 +49,7 @@ export default function NewPropertyPage() {
   const [uploadProgress, setUploadProgress] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const [customCity, setCustomCity] = useState(false);
   const [form, setForm] = useState({
     name: '', address: '', state: '', city: '', type: 'self_contain' as PropertyType,
     description: '', total_units: '1',
@@ -172,20 +173,43 @@ export default function NewPropertyPage() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <label className="eyebrow">City *</label>
-              <input
-                className="field"
-                value={form.city}
-                onChange={e => set('city', e.target.value)}
-                placeholder={form.state ? 'Type or pick city' : 'Select state first'}
-                required
-                disabled={!form.state}
-                style={!form.state ? { opacity: 0.5 } : undefined}
-                list="city-suggestions"
-              />
-              {cities.length > 0 && (
-                <datalist id="city-suggestions">
-                  {cities.map(c => <option key={c} value={c} />)}
-                </datalist>
+              {cities.length > 0 && !customCity ? (
+                <select
+                  className="field"
+                  value={form.city}
+                  onChange={e => {
+                    if (e.target.value === '__custom__') {
+                      setCustomCity(true);
+                      set('city', '');
+                    } else {
+                      set('city', e.target.value);
+                    }
+                  }}
+                  required
+                  disabled={!form.state}
+                >
+                  <option value="">Select city</option>
+                  {cities.map(c => <option key={c} value={c}>{c}</option>)}
+                  <option value="__custom__">Other — type manually ✏️</option>
+                </select>
+              ) : (
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    className="field"
+                    value={form.city}
+                    onChange={e => set('city', e.target.value)}
+                    placeholder="Enter city name"
+                    required
+                    autoFocus={customCity}
+                    style={{ flex: 1 }}
+                  />
+                  {customCity && cities.length > 0 && (
+                    <button type="button" onClick={() => { setCustomCity(false); set('city', ''); }}
+                      style={{ padding: '0 12px', borderRadius: 10, border: '1px solid var(--line)', background: 'var(--surface-2)', fontSize: 12, color: 'var(--text-3)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                      Back to list
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           </div>
