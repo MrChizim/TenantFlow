@@ -1,4 +1,34 @@
-export type PropertyType = 'residential' | 'commercial' | 'land';
+export type PropertyType =
+  | 'self_contain'
+  | '1_bedroom_flat'
+  | '2_bedroom_flat'
+  | '3_bedroom_flat'
+  | '4_bedroom_flat'
+  | '5_bedroom_flat'
+  | 'mini_flat'
+  | 'room_and_parlour'
+  | 'studio'
+  | '2_bedroom_bungalow'
+  | '3_bedroom_bungalow'
+  | '4_bedroom_bungalow'
+  | '3_bedroom_duplex'
+  | '4_bedroom_duplex'
+  | '5_bedroom_duplex'
+  | 'terraced_house'
+  | 'semi_detached'
+  | 'fully_detached'
+  | 'penthouse'
+  | 'boys_quarters'
+  | 'shop'
+  | 'office_space'
+  | 'warehouse'
+  | 'plaza'
+  | 'showroom'
+  | 'land_residential'
+  | 'land_commercial'
+  | 'farm_land'
+  | 'short_let'
+  | 'other';
 
 export interface Property {
   id: string;
@@ -54,6 +84,7 @@ export interface Tenant {
   status: 'active' | 'expiring' | 'expired' | 'no_lease';
   document_url?: string;
   agreement_signed?: boolean;
+  notes?: string;
   created_at: string;
   property?: Property;
 }

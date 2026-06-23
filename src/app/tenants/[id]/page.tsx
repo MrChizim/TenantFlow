@@ -2,7 +2,7 @@
 
 import { use, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Phone, Mail, MessageCircle, MapPin, RefreshCw, CheckCircle2, Banknote, Pencil, Clock, FileText, AlertCircle, TrendingUp, Trash2 } from 'lucide-react';
+import { ArrowLeft, Phone, Mail, MessageCircle, MapPin, RefreshCw, CheckCircle2, Banknote, Pencil, Clock, FileText, AlertCircle, TrendingUp, Trash2, StickyNote, Check, X } from 'lucide-react';
 import { formatNaira, formatDate, daysUntil } from '@/lib/utils';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { useStore } from '@/lib/store';
@@ -28,12 +28,15 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
   const addNotification = useStore(s => s.addNotification);
   const allInstallments = useStore(s => s.installments);
 
+  const updateTenant = useStore(s => s.updateTenant);
   const [markingPaid, setMarkingPaid] = useState<string | null>(null);
   const [showRentModal, setShowRentModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [newRent, setNewRent] = useState('');
   const [rentNote, setRentNote] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const [editingNotes, setEditingNotes] = useState(false);
+  const [notesValue, setNotesValue] = useState('');
 
   const tenant = tenants.find(t => t.id === id)!;
 
@@ -95,6 +98,20 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
       addNotification({ title: 'Tenant removed', body: `${tenant.first_name} ${tenant.last_name} has been removed.` });
       router.push('/tenants');
     } catch { setActionLoading(false); setShowDeleteModal(false); }
+  }
+
+  async function handleSaveNotes() {
+    setActionLoading(true);
+    try {
+      const supabase = createClient();
+      await updateTenant(supabase, id, { notes: notesValue || null } as Parameters<typeof updateTenant>[2]);
+      setEditingNotes(false);
+    } finally { setActionLoading(false); }
+  }
+
+  function startEditingNotes() {
+    setNotesValue(tenant.notes ?? '');
+    setEditingNotes(true);
   }
 
   return (
@@ -274,6 +291,50 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Notes */}
+      <div className="surface" style={{ padding: '22px 24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', marginTop: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <p style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--text-1)', display: 'flex', alignItems: 'center', gap: 7 }}>
+            <StickyNote size={14} color="var(--gold)" /> Notes
+          </p>
+          {!editingNotes && (
+            <button onClick={startEditingNotes} className="btn btn-outline" style={{ fontSize: 12, padding: '5px 12px' }}>
+              <Pencil size={11} /> {tenant.notes ? 'Edit' : 'Add note'}
+            </button>
+          )}
+        </div>
+        {editingNotes ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <textarea
+              className="field"
+              value={notesValue}
+              onChange={e => setNotesValue(e.target.value)}
+              placeholder="e.g. Pays via bank transfer. Has 2 dogs. Called about leaking roof Jan 2026. Extended family lives there."
+              rows={4}
+              style={{ resize: 'vertical', lineHeight: 1.6 }}
+              autoFocus
+            />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={handleSaveNotes} disabled={actionLoading} className="btn btn-dark" style={{ fontSize: 13 }}>
+                <Check size={13} /> Save
+              </button>
+              {tenant.notes && (
+                <button onClick={() => { setNotesValue(''); handleSaveNotes(); }} disabled={actionLoading} className="btn btn-outline" style={{ fontSize: 13, color: 'var(--red)', borderColor: 'var(--red-line)' }}>
+                  <Trash2 size={13} /> Clear note
+                </button>
+              )}
+              <button onClick={() => setEditingNotes(false)} className="btn btn-outline" style={{ fontSize: 13 }}>
+                <X size={13} /> Cancel
+              </button>
+            </div>
+          </div>
+        ) : tenant.notes ? (
+          <p style={{ fontSize: 13.5, color: 'var(--text-2)', lineHeight: 1.7, whiteSpace: 'pre-wrap', background: 'var(--surface-2)', padding: '14px 16px', borderRadius: 12 }}>{tenant.notes}</p>
+        ) : (
+          <p style={{ fontSize: 13, color: 'var(--text-3)', fontStyle: 'italic' }}>No notes yet. Add anything worth remembering about this tenant.</p>
+        )}
       </div>
 
       {/* Rent history */}
