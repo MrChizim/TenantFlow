@@ -137,6 +137,10 @@ function LoginForm() {
         <Link href="/signup" style={{ color: 'var(--gold)', fontWeight: 500, textDecoration: 'none' }}>Create one</Link>
       </p>
 
+      <p style={{ fontSize: 12.5, color: 'var(--text-3)', marginTop: 10, textAlign: 'center' }}>
+        <Link href="/home" style={{ color: 'var(--text-3)', textDecoration: 'none' }}>← Back to homepage</Link>
+      </p>
+
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
