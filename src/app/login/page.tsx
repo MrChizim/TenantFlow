@@ -3,6 +3,7 @@
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Eye, EyeOff } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -16,6 +17,7 @@ function GoogleIcon() {
     </svg>
   );
 }
+
 
 function LoginForm() {
   const router = useRouter();
@@ -56,8 +58,8 @@ function LoginForm() {
   return (
     <div style={{ width: '100%', maxWidth: '380px' }}>
       <div style={{ marginBottom: 40 }}>
-        <div style={{ width: 40, height: 40, borderRadius: 14, background: 'var(--text-1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 32 }}>
-          <span style={{ fontFamily: 'Inter, sans-serif', color: '#fff', fontSize: '1.1rem', fontWeight: 600 }}>T</span>
+        <div style={{ marginBottom: 32 }}>
+          <Image src="/logo-icon.png" alt="TenantFlow" width={44} height={44} style={{ objectFit: 'contain', width: 44, height: 44 }} />
         </div>
         <h1 style={{ fontFamily: 'Inter, sans-serif', fontSize: '2rem', color: 'var(--text-1)', letterSpacing: '-0.02em', lineHeight: 1.15, marginBottom: 8 }}>
           Sign in to<br />TenantFlow

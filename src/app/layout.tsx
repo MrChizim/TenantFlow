@@ -6,8 +6,8 @@ export const metadata: Metadata = {
   title: "TenantFlow — Property Management for Nigerian Landlords",
   description: "Track tenants, log payments, and know exactly who owes you. Built for the way Nigerians actually rent — no lease contracts required.",
   icons: {
-    icon: '/logo.png',
-    apple: '/logo.png',
+    icon: '/logo-icon.png',
+    apple: '/logo-icon.png',
   },
   manifest: '/manifest.json',
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'TenantFlow' },
@@ -15,14 +15,14 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'TenantFlow — Property Management for Nigerian Landlords',
     description: 'Track tenants, log payments, and know exactly who owes you. Built for the way Nigerians actually rent.',
-    images: [{ url: '/logo.png', width: 1080, height: 1080, alt: 'TenantFlow' }],
+    images: [{ url: '/logo-icon.png', width: 1408, height: 768, alt: 'TenantFlow' }],
     type: 'website',
   },
   twitter: {
     card: 'summary',
     title: 'TenantFlow — Property Management for Nigerian Landlords',
     description: 'Track tenants, log payments, and know exactly who owes you. Built for Nigeria.',
-    images: ['/logo.png'],
+    images: ['/logo-icon.png'],
   },
 };
 

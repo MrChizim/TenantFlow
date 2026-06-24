@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Building2, Users, CalendarClock,
@@ -54,20 +55,13 @@ export default function Sidebar({ collapsed, onToggle }: Props) {
         justifyContent: collapsed ? 'center' : 'space-between',
       }}>
         {!collapsed && (
-          <Link href="/home" style={{ display: 'flex', alignItems: 'center', gap: 9, textDecoration: 'none' }}>
-            <div style={{ width: 30, height: 30, borderRadius: 9, background: '#1C1B18', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <Building2 size={14} color="#fff" strokeWidth={2} />
-            </div>
-            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '1.08rem', color: '#1C1B18', whiteSpace: 'nowrap', letterSpacing: '-0.01em' }}>
-              TenantFlow
-            </span>
+          <Link href="/home" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+            <Image src="/logo-text.png" alt="TenantFlow" width={130} height={36} style={{ objectFit: 'contain', height: 28, width: 'auto' }} />
           </Link>
         )}
         {collapsed && (
-          <Link href="/home" style={{ textDecoration: 'none' }}>
-            <div style={{ width: 30, height: 30, borderRadius: 9, background: '#1C1B18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Building2 size={14} color="#fff" strokeWidth={2} />
-            </div>
+          <Link href="/home" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Image src="/logo-icon.png" alt="TenantFlow" width={28} height={28} style={{ objectFit: 'contain', width: 28, height: 28 }} />
           </Link>
         )}
         {!collapsed && (
