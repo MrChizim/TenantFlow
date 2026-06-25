@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { createClient } from '@/lib/supabase/client';
+import { canAddTenant } from '@/lib/plan';
 
 const UNIT_TYPES = [
   'Self Contain',
@@ -50,6 +51,7 @@ function Field({ label, value, onChange, placeholder, required, type = 'text' }:
 export default function NewTenantPage() {
   const router = useRouter();
   const properties = useStore(s => s.properties);
+  const tenants = useStore(s => s.tenants);
   const addTenant = useStore(s => s.addTenant);
   const addNotification = useStore(s => s.addNotification);
   const [loading, setLoading] = useState(false);
@@ -76,6 +78,14 @@ export default function NewTenantPage() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
+
+      const { allowed, reason } = await canAddTenant(supabase, user.id, tenants.length);
+      if (!allowed) {
+        setError(reason ?? 'Plan limit reached');
+        setLoading(false);
+        return;
+      }
+
       await addTenant(supabase, user.id, {
         first_name: form.first_name,
         last_name: form.last_name,

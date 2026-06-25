@@ -6,19 +6,20 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Building2, Users, CalendarClock,
   Bell, BarChart3, LogOut, PanelLeftClose, PanelLeftOpen,
-  Receipt, TrendingUp,
+  Receipt, TrendingUp, Crown,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 const nav = [
-  { href: '/dashboard',  label: 'Dashboard',  icon: LayoutDashboard },
-  { href: '/properties', label: 'Properties', icon: Building2 },
-  { href: '/tenants',    label: 'Tenants',    icon: Users },
-  { href: '/renewals',   label: 'Renewals',   icon: CalendarClock },
-  { href: '/reminders',  label: 'Reminders',  icon: Bell },
-  { href: '/expenses',   label: 'Expenses',   icon: Receipt },
-  { href: '/roi',        label: 'ROI',        icon: TrendingUp },
-  { href: '/reports',    label: 'Reports',    icon: BarChart3 },
+  { href: '/dashboard',         label: 'Dashboard',  icon: LayoutDashboard },
+  { href: '/properties',        label: 'Properties', icon: Building2 },
+  { href: '/tenants',           label: 'Tenants',    icon: Users },
+  { href: '/renewals',          label: 'Renewals',   icon: CalendarClock },
+  { href: '/reminders',         label: 'Reminders',  icon: Bell },
+  { href: '/expenses',          label: 'Expenses',   icon: Receipt },
+  { href: '/roi',               label: 'ROI',        icon: TrendingUp },
+  { href: '/reports',           label: 'Reports',    icon: BarChart3 },
+  { href: '/dashboard/billing', label: 'Billing',    icon: Crown },
 ];
 
 interface Props { collapsed: boolean; onToggle: () => void; }

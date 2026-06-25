@@ -7,6 +7,7 @@ import { ArrowLeft, Upload, X, ImageIcon } from 'lucide-react';
 import { useStore } from '@/lib/store';
 import { createClient } from '@/lib/supabase/client';
 import { ALL_STATES, getCities } from '@/lib/nigeria';
+import { canAddProperty } from '@/lib/plan';
 import type { PropertyType } from '@/types';
 
 const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
@@ -42,6 +43,7 @@ export default function NewPropertyPage() {
   const router = useRouter();
   const addProperty = useStore(s => s.addProperty);
   const addNotification = useStore(s => s.addNotification);
+  const properties = useStore(s => s.properties);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -95,6 +97,14 @@ export default function NewPropertyPage() {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
+
+      const { allowed, reason } = await canAddProperty(supabase, user.id, properties.length);
+      if (!allowed) {
+        setError(reason ?? 'Plan limit reached');
+        setLoading(false);
+        return;
+      }
+
       const image_url = await uploadImage(supabase, user.id);
       await addProperty(supabase, user.id, {
         name: form.name, address: form.address, city: form.city, state: form.state,
