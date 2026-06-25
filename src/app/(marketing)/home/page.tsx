@@ -21,7 +21,7 @@ const FEATURES = [
 
 const STEPS = [
   { num: '01', icon: Building2,   title: 'Add your properties', body: 'Enter the address, city, state, number of units, and an optional purchase price for ROI tracking.' },
-  { num: '02', icon: Users,       title: 'Add your tenants',    body: 'Name, phone, WhatsApp, which unit they occupy, and their annual rent. No lease contracts needed.' },
+  { num: '02', icon: Users,       title: 'Invite your tenants', body: 'Share a registration link — tenants fill their own details from their phone. Or add them manually.' },
   { num: '03', icon: CreditCard,  title: 'Record payments',     body: 'Enter the amount and how many months it covers. TenantFlow calculates the expiry date automatically.' },
   { num: '04', icon: BarChart3,   title: 'Track everything',    body: 'Your dashboard shows active tenants, who is expiring soon, income, and overdue payments.' },
 ];
@@ -43,6 +43,7 @@ const FAQS = [
   { q: 'What happens when rent expires?', a: 'The tenant status turns overdue automatically. You\'ll see it on the dashboard and Renewals page so you know exactly who to chase.' },
   { q: 'Can tenants pay in instalments?', a: 'Yes. Record each payment separately with a note. Every entry is logged in the tenant\'s full payment history.' },
   { q: 'Does it work on my phone?', a: 'Yes. TenantFlow is fully mobile-responsive. No app to download — just open it in any browser.' },
+  { q: 'Can my tenants fill their own details?', a: 'Yes. Open any property, tap "Tenant link", and share the link via WhatsApp. The tenant fills their name, phone, unit, and rent — it goes straight into your account.' },
   { q: 'How many properties can I add?', a: 'The free plan covers 1 property and up to 3 tenants — enough to get started. Pro gives you unlimited properties and tenants.' },
   { q: 'Is my data private?', a: 'Completely. Each account is isolated — your data is only visible to you.' },
   { q: 'Can I track short-let or Airbnb properties?', a: 'Yes. Short Let / Airbnb is a supported property type. You can track payments and occupancy the same way.' },
