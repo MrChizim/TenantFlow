@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Crown, Check, Zap, AlertCircle } from 'lucide-react';
+import { Crown, Check, Zap, AlertCircle, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import type { UserProfile } from '@/lib/plan';
 import { isProActive, FREE_LIMITS } from '@/lib/plan';
@@ -11,6 +11,8 @@ export default function BillingPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [confirmCancel, setConfirmCancel] = useState(false);
   const [error, setError] = useState('');
   const properties = useStore(s => s.properties);
   const tenants = useStore(s => s.tenants);
@@ -26,6 +28,22 @@ export default function BillingPage() {
     }
     load();
   }, []);
+
+  async function handleCancel() {
+    setCancelling(true);
+    setError('');
+    try {
+      const res = await fetch('/api/cancel', { method: 'POST' });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? 'Failed to cancel');
+      setProfile(p => p ? { ...p, plan: 'free', paystack_subscription_code: null } : p);
+      setConfirmCancel(false);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setCancelling(false);
+    }
+  }
 
   async function handleUpgrade() {
     setUpgrading(true);
@@ -147,10 +165,33 @@ export default function BillingPage() {
       )}
 
       {isPro && (
-        <div className="surface" style={{ padding: '20px 28px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-          <p style={{ fontSize: 13, color: 'var(--text-3)', lineHeight: 1.7 }}>
-            To cancel or manage your subscription, email us or log in to your Paystack dashboard.
-          </p>
+        <div className="surface" style={{ padding: '24px 28px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+          <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-3)', marginBottom: 16 }}>Subscription</p>
+          {!confirmCancel ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+              <p style={{ fontSize: 13.5, color: 'var(--text-2)' }}>Your Pro plan renews annually at <strong>₦10,000</strong>.</p>
+              <button onClick={() => setConfirmCancel(true)}
+                style={{ fontSize: 13, color: '#E5484D', background: 'none', border: '1px solid rgba(229,72,77,0.3)', borderRadius: 10, padding: '8px 16px', cursor: 'pointer' }}>
+                Cancel subscription
+              </button>
+            </div>
+          ) : (
+            <div style={{ background: 'rgba(229,72,77,0.06)', border: '1px solid rgba(229,72,77,0.2)', borderRadius: 14, padding: '20px' }}>
+              <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-1)', marginBottom: 6 }}>Cancel your subscription?</p>
+              <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 20, lineHeight: 1.6 }}>You'll lose access to Pro features immediately. Your data stays safe.</p>
+              {error && <p style={{ fontSize: 13, color: '#E5484D', marginBottom: 12 }}>{error}</p>}
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={handleCancel} disabled={cancelling}
+                  style={{ fontSize: 13, fontWeight: 600, color: '#fff', background: '#E5484D', border: 'none', borderRadius: 10, padding: '10px 20px', cursor: cancelling ? 'not-allowed' : 'pointer', opacity: cancelling ? 0.7 : 1 }}>
+                  {cancelling ? 'Cancelling...' : 'Yes, cancel'}
+                </button>
+                <button onClick={() => { setConfirmCancel(false); setError(''); }}
+                  style={{ fontSize: 13, color: 'var(--text-2)', background: 'var(--surface-2)', border: '1px solid var(--line)', borderRadius: 10, padding: '10px 20px', cursor: 'pointer' }}>
+                  Keep Pro
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
