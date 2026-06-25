@@ -59,7 +59,7 @@ function LoginForm() {
     <div style={{ width: '100%', maxWidth: '380px' }}>
       <div style={{ marginBottom: 40 }}>
         <div style={{ marginBottom: 32 }}>
-          <Image src="/logo-icon.png" alt="TenantFlow" width={44} height={44} style={{ objectFit: 'contain', width: 44, height: 44 }} />
+          <Image src="/logo.png" alt="TenantFlow" width={120} height={120} style={{ objectFit: 'contain', width: 80, height: 80 }} />
         </div>
         <h1 style={{ fontFamily: 'Inter, sans-serif', fontSize: '2rem', color: 'var(--text-1)', letterSpacing: '-0.02em', lineHeight: 1.15, marginBottom: 8 }}>
           Sign in to<br />TenantFlow

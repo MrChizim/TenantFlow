@@ -56,12 +56,12 @@ export default function Sidebar({ collapsed, onToggle }: Props) {
       }}>
         {!collapsed && (
           <Link href="/home" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-            <Image src="/logo-text.png" alt="TenantFlow" width={130} height={36} style={{ objectFit: 'contain', height: 28, width: 'auto' }} />
+            <Image src="/logo.png" alt="TenantFlow" width={120} height={120} style={{ objectFit: 'contain', height: 44, width: 'auto' }} />
           </Link>
         )}
         {collapsed && (
           <Link href="/home" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Image src="/logo-icon.png" alt="TenantFlow" width={28} height={28} style={{ objectFit: 'contain', width: 28, height: 28 }} />
+            <Image src="/logo.png" alt="TenantFlow" width={120} height={120} style={{ objectFit: 'contain', width: 36, height: 36 }} />
           </Link>
         )}
         {!collapsed && (

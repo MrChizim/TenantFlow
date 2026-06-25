@@ -139,7 +139,7 @@ export default function HomePage() {
 
           {/* Wordmark */}
           <Link href="/home" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-            <Image src="/logo-text.png" alt="TenantFlow" width={160} height={44} style={{ objectFit: 'contain', height: 36, width: 'auto' }} />
+            <Image src="/logo.png" alt="TenantFlow" width={200} height={200} style={{ objectFit: 'contain', height: 64, width: 'auto' }} />
           </Link>
 
           {/* Centre links */}
@@ -426,7 +426,7 @@ export default function HomePage() {
       {/* ── CTA ─────────────────────────────────────────────────────────── */}
       <section style={{ padding: '96px 28px', background: '#fff' }}>
         <div style={{ maxWidth: 600, margin: '0 auto', textAlign: 'center' }}>
-          <Image src="/logo-icon.png" alt="TenantFlow" width={72} height={72} style={{ objectFit: 'contain', margin: '0 auto', display: 'block' }} />
+          <Image src="/logo.png" alt="TenantFlow" width={120} height={120} style={{ objectFit: 'contain', margin: '0 auto', display: 'block' }} />
           <h2 style={{ fontSize: 'clamp(1.9rem, 4vw, 2.5rem)', fontWeight: 800, letterSpacing: '-0.03em', color: '#1C1B18', margin: '24px 0 14px', lineHeight: 1.15 }}>
             Your properties deserve better than a notebook
           </h2>
@@ -450,7 +450,7 @@ export default function HomePage() {
             {/* Brand */}
             <div style={{ maxWidth: 260 }}>
               <Link href="/home" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', marginBottom: 14 }}>
-                <Image src="/logo-text.png" alt="TenantFlow" width={140} height={40} style={{ objectFit: 'contain', height: 32, width: 'auto', filter: 'brightness(0) invert(1)' }} />
+                <Image src="/logo.png" alt="TenantFlow" width={200} height={200} style={{ objectFit: 'contain', height: 64, width: 'auto', filter: 'brightness(0) invert(1)' }} />
               </Link>
               <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', lineHeight: 1.7, marginTop: 8 }}>
                 Property management for Nigerian landlords. Simple, professional, built for the way Nigerians actually rent.
