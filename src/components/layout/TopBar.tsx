@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Bell, CheckCheck } from 'lucide-react';
+import { Bell, CheckCheck, Settings } from 'lucide-react';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { useStore } from '@/lib/store';
 
 const titles: Record<string, { title: string; sub: string }> = {
@@ -70,6 +71,19 @@ export default function TopBar() {
         )}
       </div>
 
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+        <Link href="/settings" title="Settings" style={{
+          width: 34, height: 34, borderRadius: 10,
+          background: 'transparent', border: '1px solid #ECEAE5',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          textDecoration: 'none', transition: 'background 0.12s, border-color 0.12s',
+        }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#F2F1EE'; (e.currentTarget as HTMLElement).style.borderColor = '#DDDAD4'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.borderColor = '#ECEAE5'; }}
+        >
+          <Settings size={14} color="#6B6860" strokeWidth={1.8} />
+        </Link>
+
       <div ref={ref} style={{ position: 'relative', flexShrink: 0 }}>
         <button
           onClick={() => { setOpen(o => !o); if (!open) markAllRead(); }}
@@ -132,6 +146,7 @@ export default function TopBar() {
             )}
           </div>
         )}
+      </div>
       </div>
     </header>
   );

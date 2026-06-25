@@ -11,15 +11,14 @@ import {
 import { createClient } from '@/lib/supabase/client';
 
 const nav = [
-  { href: '/dashboard',         label: 'Dashboard',  icon: LayoutDashboard },
-  { href: '/properties',        label: 'Properties', icon: Building2 },
-  { href: '/tenants',           label: 'Tenants',    icon: Users },
-  { href: '/renewals',          label: 'Renewals',   icon: CalendarClock },
-  { href: '/reminders',         label: 'Reminders',  icon: Bell },
-  { href: '/expenses',          label: 'Expenses',   icon: Receipt },
-  { href: '/roi',               label: 'ROI',        icon: TrendingUp },
-  { href: '/reports',           label: 'Reports',    icon: BarChart3 },
-  { href: '/dashboard/billing', label: 'Billing',    icon: Crown },
+  { href: '/dashboard',  label: 'Dashboard',  icon: LayoutDashboard },
+  { href: '/properties', label: 'Properties', icon: Building2 },
+  { href: '/tenants',    label: 'Tenants',    icon: Users },
+  { href: '/renewals',   label: 'Renewals',   icon: CalendarClock },
+  { href: '/reminders',  label: 'Reminders',  icon: Bell },
+  { href: '/expenses',   label: 'Expenses',   icon: Receipt },
+  { href: '/roi',        label: 'ROI',        icon: TrendingUp },
+  { href: '/reports',    label: 'Reports',    icon: BarChart3 },
 ];
 
 interface Props { collapsed: boolean; onToggle: () => void; }
