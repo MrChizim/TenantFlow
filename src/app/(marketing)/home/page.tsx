@@ -20,10 +20,10 @@ const FEATURES = [
 ];
 
 const STEPS = [
-  { num: '01', title: 'Add your properties', body: 'Enter each property — address, city, number of units, and an optional purchase price for ROI tracking.', img: 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=800&q=80' },
-  { num: '02', title: 'Add your tenants',    body: 'Name, phone, WhatsApp, unit, and annual rent. No lease contracts — just the basics.', img: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=800&q=80' },
-  { num: '03', title: 'Record payments',     body: 'Enter the amount and how many months it covers. TenantFlow calculates the expiry date.', img: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&q=80' },
-  { num: '04', title: 'Track everything',    body: 'Dashboard shows active tenants, who expires soon, income, and overdue payments at a glance.', img: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80' },
+  { num: '01', icon: Building2,   title: 'Add your properties', body: 'Enter the address, city, state, number of units, and an optional purchase price for ROI tracking.' },
+  { num: '02', icon: Users,       title: 'Add your tenants',    body: 'Name, phone, WhatsApp, which unit they occupy, and their annual rent. No lease contracts needed.' },
+  { num: '03', icon: CreditCard,  title: 'Record payments',     body: 'Enter the amount and how many months it covers. TenantFlow calculates the expiry date automatically.' },
+  { num: '04', icon: BarChart3,   title: 'Track everything',    body: 'Your dashboard shows active tenants, who is expiring soon, income, and overdue payments.' },
 ];
 
 const GUIDE = [
@@ -43,7 +43,7 @@ const FAQS = [
   { q: 'What happens when rent expires?', a: 'The tenant status turns overdue automatically. You\'ll see it on the dashboard and Renewals page so you know exactly who to chase.' },
   { q: 'Can tenants pay in instalments?', a: 'Yes. Record each payment separately with a note. Every entry is logged in the tenant\'s full payment history.' },
   { q: 'Does it work on my phone?', a: 'Yes. TenantFlow is fully mobile-responsive. No app to download — just open it in any browser.' },
-  { q: 'How many properties can I add?', a: 'Free plan covers up to 3 properties and 10 tenants. Pro gives you unlimited access.' },
+  { q: 'How many properties can I add?', a: 'The free plan covers 1 property and up to 3 tenants — enough to get started. Pro gives you unlimited properties and tenants.' },
   { q: 'Is my data private?', a: 'Completely. Each account is isolated — your data is only visible to you.' },
   { q: 'Can I track short-let or Airbnb properties?', a: 'Yes. Short Let / Airbnb is a supported property type. You can track payments and occupancy the same way.' },
 ];
@@ -204,34 +204,27 @@ export default function HomePage() {
       {/* ── Features ────────────────────────────────────────────────────── */}
       <section id="features" style={{ padding: '100px 32px', background: '#fff' }}>
         <div style={{ maxWidth: 1160, margin: '0 auto' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'start' }} className="tf-features-grid">
-            <div style={{ position: 'sticky', top: 100 }} className="tf-features-sticky">
-              <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#C4992A', marginBottom: 12 }}>Features</p>
-              <h2 style={{ fontSize: 'clamp(2rem, 4vw, 2.8rem)', fontWeight: 800, letterSpacing: '-0.035em', color: '#1C1B18', lineHeight: 1.1, marginBottom: 20 }}>
-                Everything in one place
-              </h2>
-              <p style={{ fontSize: 15.5, color: '#7A7670', lineHeight: 1.8, marginBottom: 36 }}>
-                Stop juggling WhatsApp messages, notebooks, and spreadsheets. TenantFlow keeps everything organised — properties, tenants, payments, and reports — in one clean tool.
-              </p>
-              <Link href="/signup" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 600, color: '#1C1B18', textDecoration: 'none', borderBottom: '2px solid #C4992A', paddingBottom: 2, transition: 'opacity 0.15s' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.7'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}>
-                See it in action <MoveRight size={15} />
-              </Link>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {FEATURES.map(({ icon: Icon, title, body }) => (
-                <div key={title} style={{ display: 'flex', gap: 18, padding: '24px 0', borderBottom: '1px solid #F0EFEB' }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 12, background: '#F6F1E3', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 }}>
-                    <Icon size={18} color="#C4992A" strokeWidth={1.8} />
-                  </div>
-                  <div>
-                    <p style={{ fontSize: 15, fontWeight: 700, color: '#1C1B18', marginBottom: 5 }}>{title}</p>
-                    <p style={{ fontSize: 13.5, color: '#7A7670', lineHeight: 1.7 }}>{body}</p>
-                  </div>
+          <div style={{ textAlign: 'center', marginBottom: 64 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#C4992A', marginBottom: 12 }}>Features</p>
+            <h2 style={{ fontSize: 'clamp(2rem, 4vw, 2.8rem)', fontWeight: 800, letterSpacing: '-0.035em', color: '#1C1B18', lineHeight: 1.1, marginBottom: 16 }}>Everything in one place</h2>
+            <p style={{ fontSize: 16, color: '#7A7670', lineHeight: 1.75, maxWidth: 520, margin: '0 auto' }}>
+              Stop juggling notebooks and WhatsApp. TenantFlow keeps your properties, tenants, and payments organised in one tool.
+            </p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, border: '1px solid #ECEAE5', borderRadius: 20, overflow: 'hidden' }} className="tf-feat-grid">
+            {FEATURES.map(({ icon: Icon, title, body }, i) => (
+              <div key={title}
+                style={{ padding: '36px 32px', background: '#fff', borderRight: i % 3 !== 2 ? '1px solid #ECEAE5' : 'none', borderBottom: i < 3 ? '1px solid #ECEAE5' : 'none', transition: 'background 0.18s' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#FAFAF8'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#fff'; }}
+              >
+                <div style={{ width: 48, height: 48, borderRadius: 14, background: '#F6F1E3', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+                  <Icon size={22} color="#C4992A" strokeWidth={1.6} />
                 </div>
-              ))}
-            </div>
+                <p style={{ fontSize: 16, fontWeight: 700, color: '#1C1B18', marginBottom: 8, letterSpacing: '-0.01em' }}>{title}</p>
+                <p style={{ fontSize: 14, color: '#7A7670', lineHeight: 1.75 }}>{body}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -239,21 +232,21 @@ export default function HomePage() {
       {/* ── How it works ────────────────────────────────────────────────── */}
       <section id="how-it-works" style={{ padding: '100px 32px', background: '#F7F6F3' }}>
         <div style={{ maxWidth: 1160, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 72 }}>
+          <div style={{ textAlign: 'center', marginBottom: 64 }}>
             <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#C4992A', marginBottom: 12 }}>How it works</p>
             <h2 style={{ fontSize: 'clamp(2rem, 4vw, 2.8rem)', fontWeight: 800, letterSpacing: '-0.035em', color: '#1C1B18', lineHeight: 1.1 }}>Up and running in minutes</h2>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 80 }}>
-            {STEPS.map(({ num, title, body, img }, i) => (
-              <div key={num} className="tf-step" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 72, alignItems: 'center' }}>
-                <div style={{ order: i % 2 === 0 ? 0 : 1 }} className="tf-step-text">
-                  <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', color: '#C4992A', textTransform: 'uppercase' }}>Step {num}</span>
-                  <h3 style={{ fontSize: 'clamp(1.5rem, 3vw, 2.1rem)', fontWeight: 800, color: '#1C1B18', letterSpacing: '-0.025em', margin: '12px 0 16px', lineHeight: 1.2 }}>{title}</h3>
-                  <p style={{ fontSize: 15.5, color: '#7A7670', lineHeight: 1.85 }}>{body}</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, position: 'relative' }} className="tf-steps-grid">
+            {/* Connector line */}
+            <div style={{ position: 'absolute', top: 36, left: '12.5%', right: '12.5%', height: 1, background: 'linear-gradient(to right, #DEDAD3, #C4992A, #DEDAD3)', zIndex: 0 }} className="tf-steps-line" />
+            {STEPS.map(({ num, icon: Icon, title, body }) => (
+              <div key={num} style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#fff', border: '2px solid #DEDAD3', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24, boxShadow: '0 4px 16px rgba(0,0,0,0.06)', flexShrink: 0 }}>
+                  <Icon size={26} color="#C4992A" strokeWidth={1.6} />
                 </div>
-                <div style={{ order: i % 2 === 0 ? 1 : 0, borderRadius: 20, overflow: 'hidden', aspectRatio: '4/3', boxShadow: '0 20px 60px rgba(0,0,0,0.1)' }} className="tf-step-img">
-                  <img src={img} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                </div>
+                <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', color: '#C4992A', textTransform: 'uppercase', marginBottom: 8 }}>Step {num}</span>
+                <h3 style={{ fontSize: 17, fontWeight: 700, color: '#1C1B18', marginBottom: 10, letterSpacing: '-0.015em', lineHeight: 1.3 }}>{title}</h3>
+                <p style={{ fontSize: 14, color: '#7A7670', lineHeight: 1.75 }}>{body}</p>
               </div>
             ))}
           </div>
@@ -313,12 +306,12 @@ export default function HomePage() {
             {/* Free */}
             <div style={{ background: '#fff', border: '1.5px solid #E8E6E1', borderRadius: 24, padding: '36px 32px' }}>
               <p style={{ fontSize: 11, fontWeight: 700, color: '#A8A59E', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 24 }}>Free</p>
-              <div style={{ marginBottom: 8 }}>
+              <div style={{ marginBottom: 6 }}>
                 <span style={{ fontSize: 52, fontWeight: 800, color: '#1C1B18', letterSpacing: '-0.04em' }}>₦0</span>
               </div>
               <p style={{ fontSize: 13, color: '#A8A59E', marginBottom: 28 }}>Forever free, no card needed</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 32 }}>
-                {['Up to 3 properties', 'Up to 10 tenants', 'Payment tracking', 'Mobile access'].map(f => (
+                {['1 property', 'Up to 3 tenants', 'Payment tracking', 'Mobile access'].map(f => (
                   <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <Check size={14} color="#C4992A" strokeWidth={2.5} />
                     <span style={{ fontSize: 14, color: '#6B6860' }}>{f}</span>
@@ -328,30 +321,30 @@ export default function HomePage() {
               <Link href="/signup" style={{ display: 'block', textAlign: 'center', padding: '14px', borderRadius: 12, border: '1.5px solid #DEDAD3', color: '#6B6860', textDecoration: 'none', fontSize: 14, fontWeight: 600, transition: 'all 0.15s' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#1C1B18'; (e.currentTarget as HTMLElement).style.color = '#1C1B18'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#DEDAD3'; (e.currentTarget as HTMLElement).style.color = '#6B6860'; }}>
-                Get started
+                Get started free
               </Link>
             </div>
 
             {/* Pro */}
             <div style={{ background: '#1C1B18', borderRadius: 24, padding: '36px 32px', position: 'relative', overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', top: 20, right: 20, background: 'linear-gradient(135deg, #C4992A, #E8C94A)', borderRadius: 99, padding: '5px 12px', fontSize: 10.5, fontWeight: 800, color: '#1C1B18', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Popular</div>
+              <div style={{ position: 'absolute', top: 20, right: 20, background: 'linear-gradient(135deg, #C4992A, #E8C94A)', borderRadius: 99, padding: '5px 12px', fontSize: 10.5, fontWeight: 800, color: '#1C1B18', letterSpacing: '0.06em', textTransform: 'uppercase' }}>7-day free trial</div>
               <p style={{ fontSize: 11, fontWeight: 700, color: '#C4992A', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 24 }}>Pro</p>
-              <div style={{ marginBottom: 8 }}>
-                <span style={{ fontSize: 52, fontWeight: 800, color: '#fff', letterSpacing: '-0.04em' }}>₦5,000</span>
+              <div style={{ marginBottom: 6 }}>
+                <span style={{ fontSize: 52, fontWeight: 800, color: '#fff', letterSpacing: '-0.04em' }}>₦10,000</span>
               </div>
-              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', marginBottom: 28 }}>Per month, cancel anytime</p>
+              <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', marginBottom: 28 }}>Per year · 7 days free, no card upfront</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 32 }}>
                 {['Unlimited properties', 'Unlimited tenants', 'Payment tracking', 'Renewal reminders', 'Reports & ROI', 'Priority support'].map(f => (
                   <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <Check size={14} color="#C4992A" strokeWidth={2.5} />
-                    <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)' }}>{f}</span>
+                    <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)' }}>{f}</span>
                   </div>
                 ))}
               </div>
               <Link href="/signup" style={{ display: 'block', textAlign: 'center', padding: '14px', borderRadius: 12, background: 'linear-gradient(135deg, #C4992A, #E8C94A)', color: '#1C1B18', textDecoration: 'none', fontSize: 14, fontWeight: 700, transition: 'opacity 0.15s' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.opacity = '0.88'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}>
-                Get started
+                Start free trial
               </Link>
             </div>
           </div>
@@ -427,14 +420,17 @@ export default function HomePage() {
         @media (max-width: 768px) {
           .tf-desktop-nav { display: none !important; }
           .tf-hamburger { display: flex !important; }
-          .tf-features-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
-          .tf-features-sticky { position: static !important; }
-          .tf-step { grid-template-columns: 1fr !important; gap: 28px !important; }
-          .tf-step-text { order: 0 !important; }
-          .tf-step-img { order: 1 !important; }
+          .tf-feat-grid { grid-template-columns: 1fr !important; border-radius: 16px !important; }
+          .tf-feat-grid > div { border-right: none !important; border-bottom: 1px solid #ECEAE5 !important; }
+          .tf-feat-grid > div:last-child { border-bottom: none !important; }
+          .tf-steps-grid { grid-template-columns: 1fr 1fr !important; gap: 32px !important; }
+          .tf-steps-line { display: none !important; }
           .tf-faq-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
           .tf-faq-sticky { position: static !important; }
           .tf-footer-links { display: none !important; }
+        }
+        @media (max-width: 480px) {
+          .tf-steps-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </div>
