@@ -20,6 +20,7 @@ export default function JoinPage({ params }: { params: Promise<{ token: string }
   });
   const [whatsappSame, setWhatsappSame] = useState(true);
   const [customUnit, setCustomUnit] = useState('');
+  const [paymentStatus, setPaymentStatus] = useState<'paid' | 'owing' | 'uncertain'>('paid');
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
@@ -39,6 +40,7 @@ export default function JoinPage({ params }: { params: Promise<{ token: string }
           ...form,
           unit_type: form.unit_type === 'Other' ? customUnit : form.unit_type,
           whatsapp: whatsappSame ? form.phone : form.whatsapp,
+          payment_status: paymentStatus,
         }),
       });
       const json = await res.json();
@@ -140,6 +142,23 @@ export default function JoinPage({ params }: { params: Promise<{ token: string }
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#A8A59E' }}>Additional notes (optional)</label>
               <textarea className="field" value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Anything else your landlord should know" rows={3} style={{ resize: 'vertical' }} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#A8A59E' }}>Rent status</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {([['paid', 'Paid up'], ['owing', 'Owing rent'], ['uncertain', 'Not sure yet']] as const).map(([val, label]) => (
+                  <button key={val} type="button" onClick={() => setPaymentStatus(val)}
+                    style={{
+                      flex: 1, padding: '10px 6px', borderRadius: 12, border: '1.5px solid',
+                      borderColor: paymentStatus === val ? (val === 'paid' ? '#1A7F4B' : val === 'owing' ? '#C0392B' : '#B45309') : '#ECEAE5',
+                      background: paymentStatus === val ? (val === 'paid' ? '#E8F5EE' : val === 'owing' ? '#FEF3F2' : '#FFF8ED') : '#FAFAF8',
+                      color: paymentStatus === val ? (val === 'paid' ? '#1A7F4B' : val === 'owing' ? '#C0392B' : '#B45309') : '#A8A59E',
+                      fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
+                    }}>
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 

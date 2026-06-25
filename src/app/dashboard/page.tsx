@@ -20,6 +20,11 @@ export default function DashboardPage() {
     [tenants]
   );
 
+  const paymentIssues = useMemo(() =>
+    tenants.filter(t => t.payment_status === 'owing' || t.payment_status === 'uncertain'),
+    [tenants]
+  );
+
   const stats = useMemo(() => ({
     total_annual_rent: tenants.reduce((s, t) => s + t.rent_amount, 0),
     total_properties: properties.length,
@@ -27,6 +32,8 @@ export default function DashboardPage() {
     active_tenants: tenants.filter(t => t.status === 'active').length,
     expiring_tenants: tenants.filter(t => t.status === 'expiring').length,
     expired_tenants: tenants.filter(t => t.status === 'expired').length,
+    owing_tenants: tenants.filter(t => t.payment_status === 'owing').length,
+    uncertain_tenants: tenants.filter(t => t.payment_status === 'uncertain').length,
   }), [tenants, properties]);
 
   const today = new Date().toLocaleDateString('en-NG', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -73,7 +80,7 @@ export default function DashboardPage() {
         <StatCard label="Annual Revenue" value={formatNaira(stats.total_annual_rent)} sub="Combined portfolio" icon={TrendingUp} accent />
         <StatCard label="Properties" value={stats.total_properties} sub="In your portfolio" icon={Building2} />
         <StatCard label="Tenants" value={stats.total_tenants} sub={`${stats.active_tenants} active`} icon={Users} />
-        <StatCard label="Need Attention" value={stats.expiring_tenants + stats.expired_tenants} sub="Expiring or overdue" icon={AlertTriangle} />
+        <StatCard label="Need Attention" value={stats.expiring_tenants + stats.expired_tenants + stats.owing_tenants + stats.uncertain_tenants} sub="Lease or payment issues" icon={AlertTriangle} />
       </div>
 
       {/* Main grid */}
@@ -180,6 +187,36 @@ export default function DashboardPage() {
               </div>
             </div>
           )}
+          {/* Payment issues */}
+          {paymentIssues.length > 0 && (
+            <div style={{ background: '#fff', border: '1px solid #ECEAE5', borderRadius: 18, padding: '22px 24px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+              <p style={{ fontWeight: 600, color: '#1C1B18', fontSize: 14, marginBottom: 16 }}>Payment Issues</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {paymentIssues.map(t => (
+                  <Link key={t.id} href={`/tenants/${t.id}`} style={{ textDecoration: 'none' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: 12, border: '1px solid #F0EFEB', background: '#FAFAF8', transition: 'background 0.12s', cursor: 'pointer' }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#F4F3EF'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = '#FAFAF8'; }}>
+                      <div>
+                        <p style={{ fontSize: 13.5, fontWeight: 500, color: '#1C1B18' }}>{t.first_name} {t.last_name}</p>
+                        <p style={{ fontSize: 12, color: '#A8A59E', marginTop: 2 }}>{t.property?.name} · {formatNaira(t.rent_amount)}/yr</p>
+                      </div>
+                      <span style={{
+                        fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
+                        padding: '4px 10px', borderRadius: 99,
+                        background: t.payment_status === 'owing' ? '#FEF3F2' : '#FFF8ED',
+                        color: t.payment_status === 'owing' ? '#C0392B' : '#B45309',
+                        border: `1px solid ${t.payment_status === 'owing' ? '#F9BDBA' : '#F5D78E'}`,
+                      }}>
+                        {t.payment_status === 'owing' ? 'Owing' : 'Uncertain'}
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
         </div>
 
         {/* Right column */}

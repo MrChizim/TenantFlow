@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   );
 
   const body = await req.json();
-  const { token, first_name, last_name, phone, whatsapp, unit_type, rent_amount, lease_start, notes } = body;
+  const { token, first_name, last_name, phone, whatsapp, unit_type, rent_amount, lease_start, notes, payment_status } = body;
 
   if (!token || !first_name || !phone || !unit_type || !rent_amount) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
     payment_schedule: null,
     agreement_signed: false,
     notes: notes || '',
+    payment_status: payment_status || 'uncertain',
     nin: '',
   });
 

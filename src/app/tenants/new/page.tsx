@@ -61,7 +61,7 @@ export default function NewTenantPage() {
   const [customUnit, setCustomUnit] = useState('');
   const [form, setForm] = useState({
     first_name: '', last_name: '', email: '', phone: '', whatsapp: '',
-    nin: '', property_id: '', rent_amount: '', agreement_signed: false, notes: '',
+    nin: '', property_id: '', rent_amount: '', agreement_signed: false, notes: '', payment_status: 'paid' as 'paid' | 'owing' | 'uncertain',
   });
   const set = (k: string, v: string | boolean) => setForm(f => ({ ...f, [k]: v }));
 
@@ -101,6 +101,7 @@ export default function NewTenantPage() {
         lease_end: null as unknown as string,
         agreement_signed: form.agreement_signed,
         notes: form.notes || undefined,
+        payment_status: form.payment_status,
         rent_history: [],
       });
       addNotification({ title: 'Tenant added', body: `${form.first_name} ${form.last_name} has been added.` });
@@ -209,6 +210,28 @@ export default function NewTenantPage() {
             <input type="checkbox" checked={form.agreement_signed} onChange={e => set('agreement_signed', e.target.checked)} style={{ width: 16, height: 16, accentColor: 'var(--gold)', cursor: 'pointer' }} />
             <span style={{ fontSize: 13.5, color: 'var(--text-2)' }}>Tenancy agreement has been signed</span>
           </label>
+        </div>
+
+        {/* Payment status */}
+        <div className="surface" style={{ padding: '24px 28px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <p style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--text-1)', marginBottom: 3 }}>Payment status</p>
+            <p style={{ fontSize: 12.5, color: 'var(--text-3)', paddingBottom: 12, borderBottom: '1px solid var(--line)' }}>What is the current rent situation for this tenant?</p>
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            {(['paid', 'owing', 'uncertain'] as const).map(s => (
+              <button key={s} type="button" onClick={() => set('payment_status', s)}
+                style={{
+                  flex: 1, padding: '10px 8px', borderRadius: 12, border: '1.5px solid',
+                  borderColor: form.payment_status === s ? (s === 'paid' ? '#1A7F4B' : s === 'owing' ? '#C0392B' : '#B45309') : 'var(--line)',
+                  background: form.payment_status === s ? (s === 'paid' ? '#E8F5EE' : s === 'owing' ? '#FEF3F2' : '#FFF8ED') : 'var(--surface-2)',
+                  color: form.payment_status === s ? (s === 'paid' ? '#1A7F4B' : s === 'owing' ? '#C0392B' : '#B45309') : 'var(--text-3)',
+                  fontSize: 13, fontWeight: 600, cursor: 'pointer', textTransform: 'capitalize',
+                }}>
+                {s === 'paid' ? 'Paid' : s === 'owing' ? 'Owing' : 'Uncertain'}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Notes */}
