@@ -29,6 +29,9 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       if (event === 'SIGNED_OUT') {
         loaded.current = false;
         clearAll();
+        try {
+          Object.keys(localStorage).filter(k => k.startsWith('tf_cache_')).forEach(k => localStorage.removeItem(k));
+        } catch { /* ignore */ }
       }
     });
 

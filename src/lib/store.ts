@@ -60,7 +60,17 @@ export const useStore = create<AppStore>((set, get) => ({
   error: null,
 
   loadFromSupabase: async (client, userId) => {
-    set({ isLoading: true, error: null });
+    // Show cached data instantly while fresh data loads
+    try {
+      const cached = localStorage.getItem(`tf_cache_${userId}`);
+      if (cached) {
+        const { properties, tenants, expenses, installments } = JSON.parse(cached);
+        set({ properties, tenants, expenses, installments, isLoading: true });
+      } else {
+        set({ isLoading: true, error: null });
+      }
+    } catch { set({ isLoading: true, error: null }); }
+
     try {
       const properties = await db.fetchProperties(client, userId);
       const [tenants, expenses, installments] = await Promise.all([
@@ -69,6 +79,9 @@ export const useStore = create<AppStore>((set, get) => ({
         db.fetchInstallments(client, userId),
       ]);
       set({ properties, tenants, expenses, installments, isLoading: false });
+      try {
+        localStorage.setItem(`tf_cache_${userId}`, JSON.stringify({ properties, tenants, expenses, installments }));
+      } catch { /* storage full, ignore */ }
     } catch (e) {
       set({ isLoading: false, error: (e as Error).message });
     }
