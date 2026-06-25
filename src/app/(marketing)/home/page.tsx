@@ -89,7 +89,7 @@ export default function HomePage() {
       }}>
         <div style={{ maxWidth: 1160, margin: '0 auto', padding: '0 32px', height: 68, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Link href="/home" style={{ textDecoration: 'none' }}>
-            <Image src="/logo.png" alt="TenantFlow" width={160} height={60} style={{ height: 52, width: 'auto', objectFit: 'contain' }} />
+            <Image src="/logo.png" alt="TenantFlow" width={200} height={80} style={{ height: 68, width: 'auto', objectFit: 'contain' }} />
           </Link>
 
           <nav className="tf-desktop-nav" style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -362,7 +362,7 @@ export default function HomePage() {
       <section style={{ position: 'relative', overflow: 'hidden', padding: '120px 32px', background: '#1C1B18' }}>
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'url(/hero1.png)', backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.12 }} />
         <div style={{ position: 'relative', maxWidth: 680, margin: '0 auto', textAlign: 'center' }}>
-          <Image src="/logo.png" alt="TenantFlow" width={120} height={120} style={{ height: 80, width: 'auto', objectFit: 'contain', margin: '0 auto 28px', display: 'block', filter: 'brightness(0) invert(1)' }} />
+          <Image src="/logo.png" alt="TenantFlow" width={200} height={120} style={{ height: 110, width: 'auto', objectFit: 'contain', margin: '0 auto 28px', display: 'block', filter: 'brightness(0) invert(1)' }} />
           <h2 style={{ fontSize: 'clamp(2rem, 5vw, 3.2rem)', fontWeight: 800, letterSpacing: '-0.035em', color: '#fff', lineHeight: 1.1, marginBottom: 18 }}>
             Your properties deserve better than a notebook
           </h2>
@@ -383,7 +383,7 @@ export default function HomePage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 48, marginBottom: 52, flexWrap: 'wrap' }} className="tf-footer-top">
             <div style={{ maxWidth: 280 }}>
               <Link href="/home" style={{ textDecoration: 'none', display: 'inline-block', marginBottom: 16 }}>
-                <Image src="/logo.png" alt="TenantFlow" width={140} height={60} style={{ height: 52, width: 'auto', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+                <Image src="/logo.png" alt="TenantFlow" width={180} height={80} style={{ height: 68, width: 'auto', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
               </Link>
               <p style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.3)', lineHeight: 1.8 }}>
                 Simple, professional property management — built for the way Nigerians actually rent.
