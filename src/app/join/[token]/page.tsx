@@ -19,6 +19,7 @@ export default function JoinPage({ params }: { params: Promise<{ token: string }
     unit_type: '', rent_amount: '', lease_start: '', notes: '',
   });
   const [whatsappSame, setWhatsappSame] = useState(true);
+  const [customUnit, setCustomUnit] = useState('');
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
@@ -36,6 +37,7 @@ export default function JoinPage({ params }: { params: Promise<{ token: string }
         body: JSON.stringify({
           token,
           ...form,
+          unit_type: form.unit_type === 'Other' ? customUnit : form.unit_type,
           whatsapp: whatsappSame ? form.phone : form.whatsapp,
         }),
       });
@@ -123,6 +125,9 @@ export default function JoinPage({ params }: { params: Promise<{ token: string }
                 <option value="">Select unit type</option>
                 {UNIT_TYPES.map(u => <option key={u} value={u}>{u}</option>)}
               </select>
+              {form.unit_type === 'Other' && (
+                <input className="field" value={customUnit} onChange={e => setCustomUnit(e.target.value)} placeholder="Describe your unit type" required autoFocus />
+              )}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#A8A59E' }}>Annual rent (₦) *</label>
