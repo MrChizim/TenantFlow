@@ -2,14 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Building2, Users, Receipt, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, Building2, Users, Bell, Crown } from 'lucide-react';
 
 const nav = [
-  { href: '/dashboard',  label: 'Home',       icon: LayoutDashboard },
-  { href: '/properties', label: 'Properties', icon: Building2 },
-  { href: '/tenants',    label: 'Tenants',    icon: Users },
-  { href: '/expenses',   label: 'Expenses',   icon: Receipt },
-  { href: '/roi',        label: 'ROI',        icon: TrendingUp },
+  { href: '/dashboard',         label: 'Home',       icon: LayoutDashboard },
+  { href: '/properties',        label: 'Properties', icon: Building2 },
+  { href: '/tenants',           label: 'Tenants',    icon: Users },
+  { href: '/reminders',         label: 'Reminders',  icon: Bell },
+  { href: '/dashboard/billing', label: 'Billing',    icon: Crown },
 ];
 
 export default function BottomNav() {

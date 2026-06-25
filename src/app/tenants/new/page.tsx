@@ -250,7 +250,17 @@ export default function NewTenantPage() {
           />
         </div>
 
-        {error && <p style={{ fontSize: 13, color: '#C0392B', background: '#FEF3F2', border: '1px solid #F9BDBA', borderRadius: 10, padding: '10px 14px' }}>{error}</p>}
+        {error && (
+          error.toLowerCase().includes('limit') || error.toLowerCase().includes('upgrade') || error.toLowerCase().includes('plan')
+            ? <div style={{ background: '#1C1B18', borderRadius: 14, padding: '18px 20px' }}>
+                <p style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Plan limit reached</p>
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', marginBottom: 14 }}>{error}</p>
+                <Link href="/dashboard/billing" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 10, background: 'linear-gradient(135deg,#C4992A,#E8C94A)', color: '#1C1B18', fontWeight: 700, fontSize: 13, textDecoration: 'none' }}>
+                  Upgrade to Pro
+                </Link>
+              </div>
+            : <p style={{ fontSize: 13, color: '#C0392B', background: '#FEF3F2', border: '1px solid #F9BDBA', borderRadius: 10, padding: '10px 14px' }}>{error}</p>
+        )}
 
         <div style={{ display: 'flex', gap: 10 }}>
           <button type="submit" disabled={loading} className="btn btn-dark">
