@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Crown, Check, Zap, AlertCircle, LogOut, User, CreditCard } from 'lucide-react';
+import { Crown, Check, Zap, AlertCircle, LogOut, User, CreditCard, Trash2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import type { UserProfile } from '@/lib/plan';
@@ -49,6 +49,9 @@ export default function SettingsPage() {
   const [cancelling, setCancelling] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [error, setError] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const properties = useStore(s => s.properties);
   const tenants = useStore(s => s.tenants);
   const router = useRouter();
@@ -87,6 +90,16 @@ export default function SettingsPage() {
     } catch (e) { setError((e as Error).message); } finally { setCancelling(false); }
   }
 
+  async function handleDeleteAccount() {
+    setDeleting(true); setDeleteError('');
+    try {
+      const res = await fetch('/api/delete-account', { method: 'POST' });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? 'Failed to delete account');
+      router.push('/login');
+    } catch (e) { setDeleteError((e as Error).message); setDeleting(false); }
+  }
+
   async function handleSignOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -102,6 +115,7 @@ export default function SettingsPage() {
     <div style={{ maxWidth: 480 }}>
       <div style={{ marginBottom: 36 }}>
         <h1 className="serif" style={{ fontSize: '1.6rem', color: 'var(--text-1)', letterSpacing: '-0.015em' }}>Settings</h1>
+        <p style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 3 }}>Account, plan and billing</p>
       </div>
 
       {/* Account */}
@@ -211,9 +225,31 @@ export default function SettingsPage() {
         </Section>
       )}
 
-      {/* Sign out */}
-      <Section title="Danger zone" icon={LogOut}>
-        <Row label="Sign out" danger onClick={handleSignOut} />
+      {/* Sign out / Delete */}
+      <Section title="Danger zone" icon={Trash2}>
+        <Row label="Sign out" onClick={handleSignOut} />
+        <div style={{ borderTop: '1px solid var(--line)' }}>
+          {!confirmDelete
+            ? <Row label="Delete account" danger onClick={() => setConfirmDelete(true)} />
+            : (
+              <div style={{ padding: '16px 20px', background: 'rgba(229,72,77,0.04)' }}>
+                <p style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text-1)', marginBottom: 4 }}>Delete your account?</p>
+                <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 14, lineHeight: 1.6 }}>This permanently deletes all your properties, tenants, and data. This cannot be undone.</p>
+                {deleteError && <p style={{ fontSize: 13, color: '#E5484D', marginBottom: 10 }}>{deleteError}</p>}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={handleDeleteAccount} disabled={deleting}
+                    style={{ fontSize: 13, fontWeight: 600, color: '#fff', background: '#E5484D', border: 'none', borderRadius: 10, padding: '9px 18px', cursor: 'pointer', opacity: deleting ? 0.7 : 1 }}>
+                    {deleting ? 'Deleting...' : 'Yes, delete everything'}
+                  </button>
+                  <button onClick={() => { setConfirmDelete(false); setDeleteError(''); }}
+                    style={{ fontSize: 13, color: 'var(--text-2)', background: 'var(--surface-2)', border: '1px solid var(--line)', borderRadius: 10, padding: '9px 18px', cursor: 'pointer' }}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )
+          }
+        </div>
       </Section>
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
