@@ -25,16 +25,12 @@ export async function POST(req: NextRequest) {
 
   if (event.event === 'subscription.create') {
     const data = event.data;
-    const email = data.customer?.email;
-    if (!email) return NextResponse.json({ ok: true });
-
-    // Find user by email
-    const { data: { users } } = await supabase.auth.admin.listUsers();
-    const user = users.find(u => u.email === email);
-    if (!user) return NextResponse.json({ ok: true });
+    // Only process TenantFlow payments — all our transactions set metadata.user_id
+    const userId = data.metadata?.user_id ?? event.metadata?.user_id;
+    if (!userId) return NextResponse.json({ ok: true });
 
     await supabase.from('profiles').upsert({
-      id: user.id,
+      id: userId,
       plan: 'pro',
       trial_ends_at: null,
       paystack_customer_code: data.customer?.customer_code ?? null,
