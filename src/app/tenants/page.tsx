@@ -97,17 +97,18 @@ export default function TenantsPage() {
           <div className="tenants-table" style={{ border: '1px solid #ECEAE5', borderRadius: 16, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
             <div style={{ overflowX: 'auto' }}>
               <div style={{ minWidth: 700 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '220px 180px 140px 160px 130px 32px', padding: '11px 24px', borderBottom: '1px solid #ECEAE5', background: '#FAFAF8' }}>
-                  {['Tenant', 'Property', 'Rent / yr', 'Lease expires', 'Status', ''].map(h => (
+                <div style={{ display: 'grid', gridTemplateColumns: '220px 180px 140px 160px 110px 110px 32px', padding: '11px 24px', borderBottom: '1px solid #ECEAE5', background: '#FAFAF8' }}>
+                  {['Tenant', 'Property', 'Rent / yr', 'Lease expires', 'Status', 'Payment', ''].map(h => (
                     <p key={h} style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#B8B5AE' }}>{h}</p>
                   ))}
                 </div>
                 {filtered.map((t) => {
                   const days = daysUntil(t.lease_end);
+                  const ps = t.payment_status ?? 'paid';
                   return (
                     <Link key={t.id} href={`/tenants/${t.id}`} style={{ textDecoration: 'none', display: 'block' }}>
                       <div style={{
-                        display: 'grid', gridTemplateColumns: '220px 180px 140px 160px 130px 32px',
+                        display: 'grid', gridTemplateColumns: '220px 180px 140px 160px 110px 110px 32px',
                         padding: '18px 24px', borderTop: '1px solid #F2F1EE',
                         alignItems: 'center', cursor: 'pointer', transition: 'background 0.1s',
                       }}
@@ -130,6 +131,15 @@ export default function TenantsPage() {
                           </p>
                         </div>
                         <StatusBadge status={t.status} />
+                        <span style={{
+                          fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
+                          padding: '3px 9px', borderRadius: 99, whiteSpace: 'nowrap',
+                          background: ps === 'owing' ? '#FEF3F2' : ps === 'uncertain' ? '#FFF8ED' : '#E8F5EE',
+                          color: ps === 'owing' ? '#C0392B' : ps === 'uncertain' ? '#B45309' : '#1A7F4B',
+                          border: `1px solid ${ps === 'owing' ? '#F9BDBA' : ps === 'uncertain' ? '#F5D78E' : '#A8E0B8'}`,
+                        }}>
+                          {ps === 'owing' ? 'Owing' : ps === 'uncertain' ? 'Uncertain' : 'Paid'}
+                        </span>
                         <ArrowUpRight size={15} color="#C4992A" />
                       </div>
                     </Link>
@@ -146,6 +156,7 @@ export default function TenantsPage() {
           <div className="tenants-cards" style={{ display: 'none', flexDirection: 'column', gap: 10 }}>
             {filtered.map((t) => {
               const days = daysUntil(t.lease_end);
+              const ps = t.payment_status ?? 'paid';
               return (
                 <Link key={t.id} href={`/tenants/${t.id}`} style={{ textDecoration: 'none' }}>
                   <div style={{ background: '#fff', border: '1px solid #ECEAE5', borderRadius: 16, padding: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -154,7 +165,16 @@ export default function TenantsPage() {
                         <p style={{ fontSize: 14, fontWeight: 600, color: '#1C1B18', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.first_name} {t.last_name}</p>
                         <p style={{ fontSize: 12, color: '#A8A59E', marginTop: 2 }}>{t.phone}</p>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                        <span style={{
+                          fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
+                          padding: '3px 9px', borderRadius: 99,
+                          background: ps === 'owing' ? '#FEF3F2' : ps === 'uncertain' ? '#FFF8ED' : '#E8F5EE',
+                          color: ps === 'owing' ? '#C0392B' : ps === 'uncertain' ? '#B45309' : '#1A7F4B',
+                          border: `1px solid ${ps === 'owing' ? '#F9BDBA' : ps === 'uncertain' ? '#F5D78E' : '#A8E0B8'}`,
+                        }}>
+                          {ps === 'owing' ? 'Owing' : ps === 'uncertain' ? 'Uncertain' : 'Paid'}
+                        </span>
                         <StatusBadge status={t.status} />
                         <ArrowUpRight size={14} color="#C4992A" />
                       </div>

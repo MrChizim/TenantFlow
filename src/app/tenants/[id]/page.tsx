@@ -155,6 +155,20 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <h1 className="serif" style={{ fontSize: '1.7rem', color: 'var(--text-1)', letterSpacing: '-0.02em' }}>{tenant.first_name} {tenant.last_name}</h1>
             <StatusBadge status={tenant.status} />
+            {(() => {
+              const ps = tenant.payment_status ?? 'paid';
+              return (
+                <span style={{
+                  fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase',
+                  padding: '3px 10px', borderRadius: 99,
+                  background: ps === 'owing' ? '#FEF3F2' : ps === 'uncertain' ? '#FFF8ED' : '#E8F5EE',
+                  color: ps === 'owing' ? '#C0392B' : ps === 'uncertain' ? '#B45309' : '#1A7F4B',
+                  border: `1px solid ${ps === 'owing' ? '#F9BDBA' : ps === 'uncertain' ? '#F5D78E' : '#A8E0B8'}`,
+                }}>
+                  {ps === 'owing' ? 'Owing' : ps === 'uncertain' ? 'Uncertain' : 'Paid'}
+                </span>
+              );
+            })()}
           </div>
           <p style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 3 }}>{tenant.property?.name} · {tenant.unit}</p>
         </div>
@@ -194,6 +208,30 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
           </button>
         </div>
       )}
+
+      {/* Payment status toggle */}
+      <div className="surface" style={{ padding: '16px 20px', marginBottom: 14, boxShadow: '0 1px 3px rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+        <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-2)', flexShrink: 0 }}>Payment status:</p>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {(['paid', 'owing', 'uncertain'] as const).map(s => {
+            const active = (tenant.payment_status ?? 'paid') === s;
+            return (
+              <button key={s} onClick={async () => {
+                const supabase = createClient();
+                await updateTenant(supabase, id, { payment_status: s } as Parameters<typeof updateTenant>[2]);
+              }}
+                style={{
+                  padding: '7px 16px', borderRadius: 99, border: '1.5px solid', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                  borderColor: active ? (s === 'paid' ? '#1A7F4B' : s === 'owing' ? '#C0392B' : '#B45309') : 'var(--line)',
+                  background: active ? (s === 'paid' ? '#E8F5EE' : s === 'owing' ? '#FEF3F2' : '#FFF8ED') : 'var(--surface-2)',
+                  color: active ? (s === 'paid' ? '#1A7F4B' : s === 'owing' ? '#C0392B' : '#B45309') : 'var(--text-3)',
+                }}>
+                {s === 'paid' ? 'Paid' : s === 'owing' ? 'Owing' : 'Uncertain'}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       <div className="tenant-detail-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 14 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
