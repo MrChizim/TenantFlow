@@ -7,8 +7,13 @@ export async function POST(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  const body = await req.json();
-  const { token, first_name, last_name, phone, whatsapp, unit, rent_amount, lease_start, notes, payment_status } = body;
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  }
+  const { token, first_name, last_name, phone, whatsapp, unit, rent_amount, lease_start, notes, payment_status } = body as Record<string, string>;
 
   const missing = [];
   if (!token) missing.push('token');
@@ -17,7 +22,7 @@ export async function POST(req: NextRequest) {
   if (!unit) missing.push('unit');
   if (!rent_amount) missing.push('rent_amount');
   if (missing.length > 0) {
-    return NextResponse.json({ error: `Missing required fields: ${missing.join(', ')}` }, { status: 400 });
+    return NextResponse.json({ error: `Missing: ${missing.join(', ')}` }, { status: 400 });
   }
 
   // Look up invite link
