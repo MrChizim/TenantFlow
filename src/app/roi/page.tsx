@@ -64,7 +64,7 @@ export default function ROIPage() {
     if (mode === 'existing' && existingProp) {
       const propTenants = tenants.filter(t => t.property_id === existingProp.id);
       const propExpenses = expenses.filter(e => e.property_id === existingProp.id);
-      const activeTenants = propTenants.filter(t => t.status === 'active');
+      const activeTenants = propTenants.filter(t => t.status === 'active' || t.status === 'expiring');
       const currentAnnualRent = activeTenants.reduce((s, t) => s + t.rent_amount, 0);
       const totalRentEver = propTenants.reduce((sum, t) => {
         const historyTotal = (t.rent_history ?? []).reduce((s, h) => s + h.amount, 0);

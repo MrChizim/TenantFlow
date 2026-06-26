@@ -43,7 +43,8 @@ export async function POST(req: NextRequest) {
     agreement_signed: false,
     notes: notes || '',
     payment_status: payment_status || 'uncertain',
-    nin: '',
+    nin: body.nin || '',
+    rent_history: [],
   });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

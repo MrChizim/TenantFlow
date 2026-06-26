@@ -41,7 +41,7 @@ export async function POST() {
       trial_period: trialDays, // Paystack trial_period in days
       metadata: {
         user_id: user.id,
-        cancel_action: `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/dashboard/billing`,
+        cancel_action: `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/settings`,
       },
       callback_url: `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/api/paystack/callback`,
     }),

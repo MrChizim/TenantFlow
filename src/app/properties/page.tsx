@@ -6,7 +6,17 @@ import { formatNaira } from '@/lib/utils';
 import { useStore } from '@/lib/store';
 
 const typeLabel: Record<string, string> = {
-  apartment: 'Apartment', duplex: 'Duplex', bungalow: 'Bungalow', commercial: 'Commercial', land: 'Land',
+  self_contain: 'Self Contain', mini_flat: 'Mini Flat', studio: 'Studio',
+  '1_bedroom_flat': '1 Bed', '2_bedroom_flat': '2 Bed', '3_bedroom_flat': '3 Bed',
+  '4_bedroom_flat': '4 Bed', '5_bedroom_flat': '5 Bed',
+  '2_bedroom_bungalow': 'Bungalow', '3_bedroom_bungalow': 'Bungalow', '4_bedroom_bungalow': 'Bungalow',
+  '3_bedroom_duplex': 'Duplex', '4_bedroom_duplex': 'Duplex', '5_bedroom_duplex': 'Duplex',
+  terraced_house: 'Terraced', semi_detached: 'Semi-Detached', fully_detached: 'Detached',
+  penthouse: 'Penthouse', boys_quarters: "BQ", shop: 'Shop', office_space: 'Office',
+  warehouse: 'Warehouse', plaza: 'Plaza', showroom: 'Showroom',
+  land_residential: 'Land', land_commercial: 'Land', farm_land: 'Farm Land',
+  short_let: 'Short Let', other: 'Other',
+  room_and_parlour: 'Room & Parlour',
 };
 
 export default function PropertiesPage() {

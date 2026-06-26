@@ -255,7 +255,7 @@ export default function NewTenantPage() {
             ? <div style={{ background: '#1C1B18', borderRadius: 14, padding: '18px 20px' }}>
                 <p style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Plan limit reached</p>
                 <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', marginBottom: 14 }}>{error}</p>
-                <Link href="/dashboard/billing" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 10, background: 'linear-gradient(135deg,#C4992A,#E8C94A)', color: '#1C1B18', fontWeight: 700, fontSize: 13, textDecoration: 'none' }}>
+                <Link href="/settings" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 10, background: 'linear-gradient(135deg,#C4992A,#E8C94A)', color: '#1C1B18', fontWeight: 700, fontSize: 13, textDecoration: 'none' }}>
                   Upgrade to Pro
                 </Link>
               </div>
