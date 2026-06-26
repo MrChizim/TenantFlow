@@ -16,7 +16,7 @@ export default function JoinPage({ params }: { params: Promise<{ token: string }
   const { token } = use(params);
   const [form, setForm] = useState({
     first_name: '', last_name: '', phone: '', whatsapp: '', email: '',
-    unit_type: '', rent_amount: '', lease_start: '', notes: '',
+    unit: '', rent_amount: '', lease_start: '', notes: '',
   });
   const [whatsappSame, setWhatsappSame] = useState(true);
   const [customUnit, setCustomUnit] = useState('');
@@ -38,7 +38,7 @@ export default function JoinPage({ params }: { params: Promise<{ token: string }
         body: JSON.stringify({
           token,
           ...form,
-          unit_type: form.unit_type === 'Other' ? customUnit : form.unit_type,
+          unit: form.unit === 'Other' ? customUnit : form.unit,
           whatsapp: whatsappSame ? form.phone : form.whatsapp,
           payment_status: paymentStatus,
         }),
@@ -123,11 +123,11 @@ export default function JoinPage({ params }: { params: Promise<{ token: string }
             <p style={{ fontSize: 13, fontWeight: 600, color: '#1C1B18', paddingBottom: 10, borderBottom: '1px solid #ECEAE5' }}>Tenancy details</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#A8A59E' }}>Unit type *</label>
-              <select className="field" value={form.unit_type} onChange={e => set('unit_type', e.target.value)} required>
+              <select className="field" value={form.unit} onChange={e => set('unit', e.target.value)} required>
                 <option value="">Select unit type</option>
                 {UNIT_TYPES.map(u => <option key={u} value={u}>{u}</option>)}
               </select>
-              {form.unit_type === 'Other' && (
+              {form.unit === 'Other' && (
                 <input className="field" value={customUnit} onChange={e => setCustomUnit(e.target.value)} placeholder="Describe your unit type" required autoFocus />
               )}
             </div>
