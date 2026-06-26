@@ -10,8 +10,14 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const { token, first_name, last_name, phone, whatsapp, unit, rent_amount, lease_start, notes, payment_status } = body;
 
-  if (!token || !first_name || !phone || !unit || !rent_amount) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+  const missing = [];
+  if (!token) missing.push('token');
+  if (!first_name) missing.push('first_name');
+  if (!phone) missing.push('phone');
+  if (!unit) missing.push('unit');
+  if (!rent_amount) missing.push('rent_amount');
+  if (missing.length > 0) {
+    return NextResponse.json({ error: `Missing required fields: ${missing.join(', ')}` }, { status: 400 });
   }
 
   // Look up invite link

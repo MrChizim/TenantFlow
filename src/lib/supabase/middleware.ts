@@ -29,6 +29,7 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith('/signup') ||
     pathname.startsWith('/forgot-password') ||
     pathname.startsWith('/auth') ||
+    pathname.startsWith('/join') ||
     pathname === '/home' ||
     pathname === '/';
 
