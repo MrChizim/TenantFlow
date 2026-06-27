@@ -83,6 +83,7 @@ export interface Tenant {
   lease_end?: string;
   status: 'active' | 'expiring' | 'expired' | 'no_lease';
   payment_status?: 'paid' | 'owing' | 'uncertain';
+  outstanding_balance?: number;
   document_url?: string;
   agreement_signed?: boolean;
   notes?: string;

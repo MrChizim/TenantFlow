@@ -57,6 +57,7 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
   const [payPartial, setPayPartial] = useState(false);
   const [payPartialNote, setPayPartialNote] = useState('');
   const [paySelectedDuration, setPaySelectedDuration] = useState('1 year');
+  const [payOutstanding, setPayOutstanding] = useState('');
 
   const tenant = tenants.find(t => t.id === id)!;
 
@@ -86,6 +87,7 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
     setPayPartial(false);
     setPayPartialNote('');
     setPaySelectedDuration('1 year');
+    setPayOutstanding('');
     setShowPaymentModal(true);
   }
 
@@ -97,9 +99,9 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
       const supabase = createClient();
       const newLeaseStart = payDate;
       const newLeaseEnd = addMonths(payDate, finalMonths);
+      const outstandingAmount = payPartial && payOutstanding ? Number(payOutstanding) : 0;
       const note = payPartial ? (payPartialNote || `Partial payment of ${formatNaira(Number(payAmount))}`) : undefined;
       await renewTenantLease(supabase, id, newLeaseEnd);
-      // Also update lease_start and record in rent_history
       const entry = {
         date: payDate,
         amount: Number(payAmount),
@@ -110,7 +112,12 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
         ].join(''),
       };
       const newHistory = [...(tenant.rent_history ?? []), entry];
-      await updateTenant(supabase, id, { lease_start: newLeaseStart, rent_history: newHistory } as Parameters<typeof updateTenant>[2]);
+      await updateTenant(supabase, id, {
+        lease_start: newLeaseStart,
+        rent_history: newHistory,
+        outstanding_balance: outstandingAmount,
+        payment_status: outstandingAmount > 0 ? 'owing' : 'paid',
+      } as Parameters<typeof updateTenant>[2]);
       addNotification({ title: 'Payment recorded', body: `${tenant.first_name} ${tenant.last_name} paid — covered until ${formatDate(newLeaseEnd)}.` });
       setShowPaymentModal(false);
     } finally { setActionLoading(false); }
@@ -233,6 +240,25 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
         </div>
       </div>
 
+      {/* Outstanding balance box */}
+      {(tenant.outstanding_balance ?? 0) > 0 && (
+        <div style={{ background: '#FEF3F2', border: '1px solid var(--red-line)', borderRadius: 16, padding: '16px 20px', marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+          <div>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--red)', marginBottom: 4 }}>Outstanding balance</p>
+            <p style={{ fontSize: 26, fontWeight: 800, color: 'var(--red)', letterSpacing: '-0.02em' }}>{formatNaira(tenant.outstanding_balance!)}</p>
+            <p style={{ fontSize: 12.5, color: 'var(--red)', opacity: 0.7, marginTop: 2 }}>Partial payment recorded — this amount is still owed</p>
+          </div>
+          <button
+            onClick={async () => {
+              const supabase = createClient();
+              await updateTenant(supabase, id, { outstanding_balance: 0, payment_status: 'paid' } as Parameters<typeof updateTenant>[2]);
+            }}
+            style={{ fontSize: 13, fontWeight: 600, padding: '9px 18px', borderRadius: 10, background: 'var(--red)', color: '#fff', border: 'none', cursor: 'pointer', flexShrink: 0 }}>
+            Mark as cleared
+          </button>
+        </div>
+      )}
+
       <div className="tenant-detail-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 14 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
 
@@ -331,6 +357,9 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
                   ? { label: 'Days left', value: days < 0 ? `${Math.abs(days)}d overdue` : `${days}d`, color: days < 0 ? 'var(--red)' : days < 90 ? 'var(--amber)' : 'var(--green)' }
                   : { label: 'Status', value: 'No payment yet', color: 'var(--text-3)' },
                 paidUntil ? { label: 'Paid until', value: formatDate(paidUntil), color: 'var(--text-1)' } : null,
+                (tenant.outstanding_balance ?? 0) > 0
+                  ? { label: 'Outstanding', value: formatNaira(tenant.outstanding_balance!), color: 'var(--red)' }
+                  : null,
               ] as Array<{ label: string; value: string; color: string } | null>).filter(Boolean).map(row => {
                 const r = row!;
                 return (
@@ -423,7 +452,23 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
                   <span style={{ fontSize: 12.5, color: 'var(--text-3)' }}>This is a partial payment (not the full rent)</span>
                 </label>
                 {payPartial && (
-                  <input type="text" className="field" value={payPartialNote} onChange={e => setPayPartialNote(e.target.value)} placeholder="e.g. Paid ₦300k, balance ₦200k pending" />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, background: '#FEF3F2', border: '1px solid var(--red-line)', borderRadius: 12, padding: '12px 14px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                      <label className="eyebrow" style={{ color: 'var(--red)' }}>Amount still outstanding (₦)</label>
+                      <div style={{ position: 'relative' }}>
+                        <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 13.5, color: 'var(--text-3)', pointerEvents: 'none' }}>₦</span>
+                        <input type="number" className="field" value={payOutstanding} onChange={e => setPayOutstanding(e.target.value)}
+                          placeholder={payAmount ? String(Math.max(0, tenant.rent_amount - Number(payAmount))) : '0'}
+                          style={{ paddingLeft: 26 }} />
+                      </div>
+                      {payAmount && Number(payOutstanding) > 0 && (
+                        <p style={{ fontSize: 12, color: 'var(--red)' }}>
+                          Paid {formatNaira(Number(payAmount))} · still owes {formatNaira(Number(payOutstanding))}
+                        </p>
+                      )}
+                    </div>
+                    <input type="text" className="field" value={payPartialNote} onChange={e => setPayPartialNote(e.target.value)} placeholder="Note (optional) e.g. balance by end of month" />
+                  </div>
                 )}
               </div>
 
