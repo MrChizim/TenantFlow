@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Crown, Check, Zap, AlertCircle, LogOut, User, CreditCard, Trash2 } from 'lucide-react';
+import { Crown, Check, Zap, AlertCircle, LogOut, User, CreditCard, Trash2, Receipt } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import type { UserProfile } from '@/lib/plan';
@@ -52,6 +52,9 @@ export default function SettingsPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [businessName, setBusinessName] = useState('');
+  const [savingBusinessName, setSavingBusinessName] = useState(false);
+  const [businessNameSaved, setBusinessNameSaved] = useState(false);
   const properties = useStore(s => s.properties);
   const tenants = useStore(s => s.tenants);
   const router = useRouter();
@@ -64,6 +67,7 @@ export default function SettingsPage() {
       setUserEmail(user.email ?? '');
       const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
       setProfile(data as UserProfile);
+      setBusinessName((data as UserProfile)?.business_name ?? '');
       setLoading(false);
     }
     load();
@@ -98,6 +102,19 @@ export default function SettingsPage() {
       if (!res.ok) throw new Error(json.error ?? 'Failed to delete account');
       router.push('/login');
     } catch (e) { setDeleteError((e as Error).message); setDeleting(false); }
+  }
+
+  async function handleSaveBusinessName() {
+    setSavingBusinessName(true); setBusinessNameSaved(false);
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      await supabase.from('profiles').update({ business_name: businessName || null }).eq('id', user.id);
+      setProfile(p => p ? { ...p, business_name: businessName || null } : p);
+      setBusinessNameSaved(true);
+      setTimeout(() => setBusinessNameSaved(false), 2000);
+    } finally { setSavingBusinessName(false); }
   }
 
   async function handleSignOut() {
@@ -156,6 +173,34 @@ export default function SettingsPage() {
               </div>
             ))}
           </div>
+        </div>
+      </Section>
+
+      {/* Receipts */}
+      <Section title="Receipts" icon={Receipt}>
+        <div style={{ padding: '16px 20px' }}>
+          <label style={{ fontSize: 13, color: 'var(--text-2)', display: 'block', marginBottom: 8 }}>Landlord / business name</label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              type="text"
+              className="field"
+              value={businessName}
+              onChange={e => setBusinessName(e.target.value)}
+              placeholder="e.g. Chizim Properties"
+              style={{ flex: 1 }}
+            />
+            <button
+              onClick={handleSaveBusinessName}
+              disabled={savingBusinessName}
+              className="btn btn-dark"
+              style={{ whiteSpace: 'nowrap' }}
+            >
+              {savingBusinessName ? '...' : businessNameSaved ? 'Saved' : 'Save'}
+            </button>
+          </div>
+          <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 8, lineHeight: 1.6 }}>
+            This appears at the top of every payment receipt you generate for tenants.
+          </p>
         </div>
       </Section>
 

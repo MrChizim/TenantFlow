@@ -59,6 +59,8 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
   const [payPartialNote, setPayPartialNote] = useState('');
   const [paySelectedDuration, setPaySelectedDuration] = useState('1 year');
   const [payOutstanding, setPayOutstanding] = useState('');
+  const [showReceiptPrompt, setShowReceiptPrompt] = useState(false);
+  const [lastPaymentIndex, setLastPaymentIndex] = useState<number | null>(null);
 
   const tenant = tenants.find(t => t.id === id)!;
 
@@ -108,6 +110,9 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
       const entry = {
         date: payDate,
         amount: Number(payAmount),
+        period_start: payPeriodStart,
+        period_end: newLeaseEnd,
+        method: payMethod,
         note: [
           `Paid ${formatNaira(Number(payAmount))} — covers ${finalMonths} month${finalMonths !== 1 ? 's' : ''} (${formatDate(payPeriodStart)} to ${formatDate(newLeaseEnd)})`,
           payPartial ? ` · PARTIAL: ${payPartialNote || 'partial payment'}` : '',
@@ -124,6 +129,8 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
       } as Parameters<typeof updateTenant>[2]);
       addNotification({ title: 'Payment recorded', body: `${tenant.first_name} ${tenant.last_name} paid — covered until ${formatDate(newLeaseEnd)}.` });
       setShowPaymentModal(false);
+      setLastPaymentIndex(newHistory.length - 1);
+      setShowReceiptPrompt(true);
     } finally { setActionLoading(false); }
   }
 
@@ -336,13 +343,18 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
                 <Banknote size={14} color="var(--gold)" /> Payment history
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {[...(tenant.rent_history ?? [])].reverse().map((h, i) => (
+                {(tenant.rent_history ?? []).map((h, i) => ({ h, i })).reverse().map(({ h, i }) => (
                   <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, padding: '12px 14px', background: 'var(--surface-2)', borderRadius: 12 }}>
                     <div style={{ minWidth: 0 }}>
                       <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-1)' }}>{formatNaira(h.amount)}</p>
                       {h.note && <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 3, lineHeight: 1.5 }}>{h.note}</p>}
                     </div>
-                    <span style={{ fontSize: 11.5, color: 'var(--text-3)', paddingTop: 2, whiteSpace: 'nowrap', flexShrink: 0 }}>{formatDate(h.date)}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
+                      <span style={{ fontSize: 11.5, color: 'var(--text-3)', whiteSpace: 'nowrap' }}>{formatDate(h.date)}</span>
+                      <Link href={`/receipt/${id}/${i}`} style={{ fontSize: 11.5, color: 'var(--gold)', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                        Receipt
+                      </Link>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -545,6 +557,27 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
                 </button>
                 <button onClick={() => setShowPaymentModal(false)} className="btn btn-outline">Cancel</button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Receipt prompt (shown right after recording a payment) */}
+      {showReceiptPrompt && lastPaymentIndex !== null && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={() => setShowReceiptPrompt(false)}>
+          <div style={{ background: '#fff', borderRadius: 20, padding: '28px', width: '100%', maxWidth: 380, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+            <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--gold-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              <CheckCircle2 size={24} color="var(--gold)" />
+            </div>
+            <p style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-1)', marginBottom: 6 }}>Payment recorded</p>
+            <p style={{ fontSize: 13.5, color: 'var(--text-3)', marginBottom: 24, lineHeight: 1.6 }}>
+              {tenant.first_name} {tenant.last_name} paid — covered until {formatDate(tenant.rent_history?.[lastPaymentIndex]?.period_end)}.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <Link href={`/receipt/${id}/${lastPaymentIndex}`} className="btn btn-dark" style={{ textDecoration: 'none' }}>
+                View / download receipt
+              </Link>
+              <button onClick={() => setShowReceiptPrompt(false)} className="btn btn-outline">Done</button>
             </div>
           </div>
         </div>

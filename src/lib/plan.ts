@@ -8,6 +8,7 @@ export interface UserProfile {
   trial_ends_at: string | null;
   paystack_customer_code: string | null;
   paystack_subscription_code: string | null;
+  business_name: string | null;
 }
 
 export const FREE_LIMITS = { properties: 1, tenants: 3 };

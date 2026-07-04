@@ -64,6 +64,9 @@ export interface RentHistoryEntry {
   date: string;
   amount: number;
   note?: string;
+  period_start?: string;
+  period_end?: string;
+  method?: 'bank_transfer' | 'cash' | 'online';
 }
 
 export interface Tenant {
