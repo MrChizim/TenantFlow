@@ -53,6 +53,7 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
   const [payDurationMonths, setPayDurationMonths] = useState(12);
   const [payCustomMonths, setPayCustomMonths] = useState('');
   const [payDate, setPayDate] = useState(new Date().toISOString().split('T')[0]);
+  const [payPeriodStart, setPayPeriodStart] = useState(new Date().toISOString().split('T')[0]);
   const [payMethod, setPayMethod] = useState<'bank_transfer' | 'cash' | 'online'>('bank_transfer');
   const [payPartial, setPayPartial] = useState(false);
   const [payPartialNote, setPayPartialNote] = useState('');
@@ -83,6 +84,7 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
     setPayDurationMonths(12);
     setPayCustomMonths('');
     setPayDate(new Date().toISOString().split('T')[0]);
+    setPayPeriodStart(new Date().toISOString().split('T')[0]);
     setPayMethod('bank_transfer');
     setPayPartial(false);
     setPayPartialNote('');
@@ -97,18 +99,20 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
     setActionLoading(true);
     try {
       const supabase = createClient();
-      const newLeaseStart = payDate;
-      const newLeaseEnd = addMonths(payDate, finalMonths);
+      const newLeaseStart = payPeriodStart;
+      const newLeaseEnd = addMonths(payPeriodStart, finalMonths);
       const outstandingAmount = payPartial && payOutstanding ? Number(payOutstanding) : 0;
       const note = payPartial ? (payPartialNote || `Partial payment of ${formatNaira(Number(payAmount))}`) : undefined;
       await renewTenantLease(supabase, id, newLeaseEnd);
+      const backdatedNote = payPeriodStart !== payDate ? ` · rent period backdated to ${formatDate(payPeriodStart)}` : '';
       const entry = {
         date: payDate,
         amount: Number(payAmount),
         note: [
-          `Paid ${formatNaira(Number(payAmount))} — covers ${finalMonths} month${finalMonths !== 1 ? 's' : ''} (until ${formatDate(newLeaseEnd)})`,
+          `Paid ${formatNaira(Number(payAmount))} — covers ${finalMonths} month${finalMonths !== 1 ? 's' : ''} (${formatDate(payPeriodStart)} to ${formatDate(newLeaseEnd)})`,
           payPartial ? ` · PARTIAL: ${payPartialNote || 'partial payment'}` : '',
           ` · ${METHODS.find(m => m.value === payMethod)?.label}`,
+          backdatedNote,
         ].join(''),
       };
       const newHistory = [...(tenant.rent_history ?? []), entry];
@@ -493,19 +497,29 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
                 {/* Preview */}
                 {(() => {
                   const months = paySelectedDuration === 'Custom' ? Number(payCustomMonths) : payDurationMonths;
-                  if (!months || !payDate) return null;
+                  if (!months || !payPeriodStart) return null;
                   return (
                     <p style={{ fontSize: 12.5, color: 'var(--text-3)', background: 'var(--surface-2)', padding: '8px 12px', borderRadius: 9 }}>
-                      Paid until: <strong style={{ color: 'var(--text-1)' }}>{formatDate(addMonths(payDate, months))}</strong>
+                      Paid until: <strong style={{ color: 'var(--text-1)' }}>{formatDate(addMonths(payPeriodStart, months))}</strong>
                     </p>
                   );
                 })()}
+              </div>
+
+              {/* Rent period start */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label className="eyebrow">Rent period starts *</label>
+                <input type="date" className="field" value={payPeriodStart} onChange={e => setPayPeriodStart(e.target.value)} />
+                <p style={{ fontSize: 12, color: 'var(--text-3)' }}>
+                  When the rent covered by this payment actually begins. Backdate this if the tenant paid late for an earlier period (e.g. paid in July for rent due in May).
+                </p>
               </div>
 
               {/* Date paid */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <label className="eyebrow">Date received *</label>
                 <input type="date" className="field" value={payDate} onChange={e => setPayDate(e.target.value)} />
+                <p style={{ fontSize: 12, color: 'var(--text-3)' }}>When the money actually came in.</p>
               </div>
 
               {/* Method */}
