@@ -1,5 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { isRateLimited } from '@/lib/rate-limit';
+
+const MAX_LEN: Record<string, number> = {
+  first_name: 80, last_name: 80, phone: 32, whatsapp: 32, email: 254,
+  unit: 80, notes: 1000, nin: 20,
+};
+
+function clip(value: string, field: string): string {
+  const max = MAX_LEN[field] ?? 255;
+  return value.slice(0, max);
+}
 
 export async function POST(req: NextRequest) {
   const admin = createClient(
@@ -25,6 +36,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Missing: ${missing.join(', ')}` }, { status: 400 });
   }
 
+  const rentAmountNum = Number(rent_amount);
+  if (!Number.isFinite(rentAmountNum) || rentAmountNum <= 0 || rentAmountNum > 1_000_000_000) {
+    return NextResponse.json({ error: 'Invalid rent_amount' }, { status: 400 });
+  }
+
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown';
+  if (isRateLimited(`invite:${token}`, 5, 10 * 60 * 1000) || isRateLimited(`invite-ip:${ip}`, 10, 10 * 60 * 1000)) {
+    return NextResponse.json({ error: 'Too many submissions. Please try again later.' }, { status: 429 });
+  }
+
   // Look up invite link
   const { data: link } = await admin
     .from('tenant_invite_links')
@@ -37,24 +58,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'This link has expired. Ask your landlord for a new one.' }, { status: 410 });
   }
 
+  const allowedPaymentStatus = ['paid', 'owing', 'uncertain'];
+  const safePaymentStatus = allowedPaymentStatus.includes(payment_status) ? payment_status : 'uncertain';
+
   // Insert tenant
   const { error } = await admin.from('tenants').insert({
     user_id: link.user_id,
     property_id: link.property_id,
-    first_name,
-    last_name: last_name || '',
-    phone,
-    whatsapp: whatsapp || phone,
-    email: body.email || '',
-    unit,
-    rent_amount: Number(rent_amount),
+    first_name: clip(first_name, 'first_name'),
+    last_name: clip(last_name || '', 'last_name'),
+    phone: clip(phone, 'phone'),
+    whatsapp: clip(whatsapp || phone, 'whatsapp'),
+    email: clip(String(body.email || ''), 'email'),
+    unit: clip(unit, 'unit'),
+    rent_amount: rentAmountNum,
     lease_start: lease_start || null,
     lease_end: null,
     payment_schedule: null,
     agreement_signed: false,
-    notes: notes || '',
-    payment_status: payment_status || 'uncertain',
-    nin: body.nin || '',
+    notes: clip(notes || '', 'notes'),
+    payment_status: safePaymentStatus,
+    nin: clip(String(body.nin || ''), 'nin'),
     rent_history: [],
   });
 

@@ -16,7 +16,10 @@ export async function POST(req: NextRequest) {
   const signature = req.headers.get('x-paystack-signature') ?? '';
 
   const hash = crypto.createHmac('sha512', secret).update(body).digest('hex');
-  if (hash !== signature) {
+  const hashBuf = Buffer.from(hash, 'utf8');
+  const sigBuf = Buffer.from(signature, 'utf8');
+  const valid = hashBuf.length === sigBuf.length && crypto.timingSafeEqual(hashBuf, sigBuf);
+  if (!valid) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
   }
 
