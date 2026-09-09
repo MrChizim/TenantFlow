@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { CheckCircle2, ArrowUpRight, X } from 'lucide-react';
 import { useStore } from '@/lib/store';
-import { createClient } from '@/lib/supabase/client';
 import { formatNaira, formatDate, daysUntil } from '@/lib/utils';
 import StatusBadge from '@/components/ui/StatusBadge';
 import type { Tenant } from '@/types';
@@ -66,9 +65,8 @@ export default function RenewalsPage() {
     if (!confirming) return;
     setRenewLoading(true);
     try {
-      const supabase = createClient();
       const newLeaseEnd = addOneYear(confirming.lease_end ?? new Date().toISOString().split('T')[0]);
-      await renewTenantLease(supabase, confirming.id, newLeaseEnd);
+      await renewTenantLease(confirming.id, newLeaseEnd);
       setRenewed(p => new Set([...p, confirming.id]));
       addNotification({ title: 'Lease renewed', body: `${confirming.first_name} ${confirming.last_name}'s lease extended to ${newLeaseEnd}.` });
       setConfirming(null);

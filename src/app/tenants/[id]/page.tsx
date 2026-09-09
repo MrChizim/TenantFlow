@@ -6,7 +6,6 @@ import { ArrowLeft, Phone, Mail, MessageCircle, MapPin, CheckCircle2, Banknote, 
 import { formatNaira, formatDate, daysUntil } from '@/lib/utils';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { useStore } from '@/lib/store';
-import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
 const DURATIONS = [
@@ -100,12 +99,11 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
     if (!finalMonths || finalMonths < 1) return;
     setActionLoading(true);
     try {
-      const supabase = createClient();
       const newLeaseStart = payPeriodStart;
       const newLeaseEnd = addMonths(payPeriodStart, finalMonths);
       const outstandingAmount = payPartial && payOutstanding ? Number(payOutstanding) : 0;
       const note = payPartial ? (payPartialNote || `Partial payment of ${formatNaira(Number(payAmount))}`) : undefined;
-      await renewTenantLease(supabase, id, newLeaseEnd);
+      await renewTenantLease(id, newLeaseEnd);
       const backdatedNote = payPeriodStart !== payDate ? ` · rent period backdated to ${formatDate(payPeriodStart)}` : '';
       const entry = {
         date: payDate,
@@ -121,12 +119,12 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
         ].join(''),
       };
       const newHistory = [...(tenant.rent_history ?? []), entry];
-      await updateTenant(supabase, id, {
+      await updateTenant(id, {
         lease_start: newLeaseStart,
         rent_history: newHistory,
         outstanding_balance: outstandingAmount,
         payment_status: outstandingAmount > 0 ? 'owing' : 'paid',
-      } as Parameters<typeof updateTenant>[2]);
+      } as Parameters<typeof updateTenant>[1]);
       addNotification({ title: 'Payment recorded', body: `${tenant.first_name} ${tenant.last_name} paid — covered until ${formatDate(newLeaseEnd)}.` });
       setShowPaymentModal(false);
       setLastPaymentIndex(newHistory.length - 1);
@@ -138,8 +136,7 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
     if (!newRent) return;
     setActionLoading(true);
     try {
-      const supabase = createClient();
-      await updateTenantRent(supabase, id, Number(newRent), rentNote || undefined);
+      await updateTenantRent(id, Number(newRent), rentNote || undefined);
       addNotification({ title: 'Rent updated', body: `Rent updated to ${formatNaira(Number(newRent))}/yr.` });
       setNewRent(''); setRentNote(''); setShowRentModal(false);
     } finally { setActionLoading(false); }
@@ -148,8 +145,7 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
   async function handleDelete() {
     setActionLoading(true);
     try {
-      const supabase = createClient();
-      await deleteTenant(supabase, id);
+      await deleteTenant(id);
       addNotification({ title: 'Tenant removed', body: `${tenant.first_name} ${tenant.last_name} has been removed.` });
       router.push('/tenants');
     } catch { setActionLoading(false); setShowDeleteModal(false); }
@@ -158,8 +154,7 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
   async function handleSaveNotes() {
     setActionLoading(true);
     try {
-      const supabase = createClient();
-      await updateTenant(supabase, id, { notes: notesValue || null } as Parameters<typeof updateTenant>[2]);
+      await updateTenant(id, { notes: notesValue || null } as Parameters<typeof updateTenant>[1]);
       setEditingNotes(false);
     } finally { setActionLoading(false); }
   }
@@ -235,8 +230,7 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
             const active = (tenant.payment_status ?? 'paid') === s;
             return (
               <button key={s} onClick={async () => {
-                const supabase = createClient();
-                await updateTenant(supabase, id, { payment_status: s } as Parameters<typeof updateTenant>[2]);
+                await updateTenant(id, { payment_status: s } as Parameters<typeof updateTenant>[1]);
               }}
                 style={{
                   padding: '7px 16px', borderRadius: 99, border: '1.5px solid', fontSize: 13, fontWeight: 600, cursor: 'pointer',
@@ -261,8 +255,7 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
           </div>
           <button
             onClick={async () => {
-              const supabase = createClient();
-              await updateTenant(supabase, id, { outstanding_balance: 0, payment_status: 'paid' } as Parameters<typeof updateTenant>[2]);
+              await updateTenant(id, { outstanding_balance: 0, payment_status: 'paid' } as Parameters<typeof updateTenant>[1]);
             }}
             style={{ fontSize: 13, fontWeight: 600, padding: '9px 18px', borderRadius: 10, background: 'var(--red)', color: '#fff', border: 'none', cursor: 'pointer', flexShrink: 0 }}>
             Mark as cleared

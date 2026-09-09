@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { useStore } from '@/lib/store';
-import { createClient } from '@/lib/supabase/client';
 
 function Field({ label, value, onChange, placeholder, required, type = 'text', prefix }: {
   label: string; value: string; onChange: (v: string) => void;
@@ -75,8 +74,7 @@ export default function EditPropertyPage({ params }: { params: Promise<{ id: str
     setError('');
     setLoading(true);
     try {
-      const supabase = createClient();
-      await updateProperty(supabase, id, {
+      await updateProperty(id, {
         name: form.name, address: form.address, city: form.city, state: form.state,
         type: form.type as import('@/types').PropertyType,
         total_units: Number(form.total_units),

@@ -172,8 +172,8 @@ body {
   .main-content { margin-left: 0 !important; }
 
   /* Spacing */
-  .page-padding   { padding: 20px 16px 90px !important; }
-  .topbar-padding { padding: 0 16px !important; }
+  .page-padding   { padding: 24px 20px 90px !important; }
+  .topbar-padding { padding: 0 20px !important; }
 
   /* Page headers stack vertically */
   .page-header     { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }

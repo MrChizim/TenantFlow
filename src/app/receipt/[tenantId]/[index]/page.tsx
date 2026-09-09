@@ -5,8 +5,6 @@ import Link from 'next/link';
 import { ArrowLeft, Printer, MessageCircle } from 'lucide-react';
 import { formatNaira, formatDate } from '@/lib/utils';
 import { useStore } from '@/lib/store';
-import { createClient } from '@/lib/supabase/client';
-import type { UserProfile } from '@/lib/plan';
 
 const METHOD_LABELS: Record<string, string> = {
   bank_transfer: 'Bank transfer',
@@ -21,11 +19,9 @@ export default function ReceiptPage({ params }: { params: Promise<{ tenantId: st
 
   useEffect(() => {
     async function load() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-      setBusinessName((data as UserProfile)?.business_name ?? null);
+      const res = await fetch('/api/settings');
+      const data = await res.json();
+      setBusinessName(data.business_name ?? null);
     }
     load();
   }, []);

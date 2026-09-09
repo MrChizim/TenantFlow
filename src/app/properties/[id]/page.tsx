@@ -7,7 +7,6 @@ import { ArrowLeft, MapPin, Plus, Pencil, TrendingUp, Trash2, Link2, Copy, Check
 import { formatNaira, formatDate } from '@/lib/utils';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { useStore } from '@/lib/store';
-import { createClient } from '@/lib/supabase/client';
 
 export default function PropertyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -36,9 +35,6 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
   async function handleGenerateLink() {
     setInviteLoading(true);
     try {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
       const res = await fetch('/api/invite/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -60,8 +56,7 @@ export default function PropertyDetailPage({ params }: { params: Promise<{ id: s
   async function handleDelete() {
     setDeleting(true);
     try {
-      const supabase = createClient();
-      await deleteProperty(supabase, id);
+      await deleteProperty(id);
       addNotification({ title: 'Property removed', body: `${property.name} has been removed from your portfolio.` });
       router.push('/properties');
     } catch { setDeleting(false); setShowDeleteModal(false); }

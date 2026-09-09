@@ -1,9 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
-import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Tenant, Property, Expense, PaymentInstallment, RentHistoryEntry } from '@/types';
-import * as db from '@/lib/db';
+import type { Tenant, Property, Expense, PaymentInstallment } from '@/types';
 
 export interface Notification {
   id: string;
@@ -11,6 +9,18 @@ export interface Notification {
   body: string;
   at: string;
   read: boolean;
+}
+
+async function api<T>(url: string, options?: RequestInit): Promise<T> {
+  const res = await fetch(url, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error ?? `Request failed: ${res.status}`);
+  }
+  return res.json();
 }
 
 interface AppStore {
@@ -23,32 +33,34 @@ interface AppStore {
   error: string | null;
 
   // Lifecycle
-  loadFromSupabase: (client: SupabaseClient, userId: string) => Promise<void>;
+  load: () => Promise<void>;
   clearAll: () => void;
 
   // Properties
-  addProperty: (client: SupabaseClient, userId: string, data: Omit<Property, 'id' | 'created_at'>) => Promise<void>;
-  updateProperty: (client: SupabaseClient, id: string, data: Partial<Omit<Property, 'id' | 'created_at' | 'user_id'>>) => Promise<void>;
-  deleteProperty: (client: SupabaseClient, id: string) => Promise<void>;
+  addProperty: (data: Omit<Property, 'id' | 'created_at'>) => Promise<void>;
+  updateProperty: (id: string, data: Partial<Omit<Property, 'id' | 'created_at'>>) => Promise<void>;
+  deleteProperty: (id: string) => Promise<void>;
 
   // Tenants
-  addTenant: (client: SupabaseClient, userId: string, data: Omit<Tenant, 'id' | 'created_at' | 'status' | 'property'>) => Promise<void>;
-  updateTenant: (client: SupabaseClient, id: string, data: Partial<Omit<Tenant, 'id' | 'created_at' | 'status' | 'property' | 'user_id'>>) => Promise<void>;
-  updateTenantRent: (client: SupabaseClient, id: string, newAmount: number, note?: string) => Promise<void>;
-  renewTenantLease: (client: SupabaseClient, id: string, newLeaseEnd: string) => Promise<void>;
-  deleteTenant: (client: SupabaseClient, id: string) => Promise<void>;
+  addTenant: (data: Omit<Tenant, 'id' | 'created_at' | 'status' | 'property'>) => Promise<void>;
+  updateTenant: (id: string, data: Partial<Omit<Tenant, 'id' | 'created_at' | 'status' | 'property'>>) => Promise<void>;
+  updateTenantRent: (id: string, newAmount: number, note?: string) => Promise<void>;
+  renewTenantLease: (id: string, newLeaseEnd: string) => Promise<void>;
+  deleteTenant: (id: string) => Promise<void>;
 
   // Expenses
-  addExpense: (client: SupabaseClient, userId: string, data: Omit<Expense, 'id' | 'created_at'>) => Promise<void>;
-  deleteExpense: (client: SupabaseClient, id: string) => Promise<void>;
+  addExpense: (data: Omit<Expense, 'id' | 'created_at'>) => Promise<void>;
+  deleteExpense: (id: string) => Promise<void>;
 
   // Installments
-  markInstallmentPaid: (client: SupabaseClient, id: string, method: 'bank_transfer' | 'cash' | 'online', reference?: string) => Promise<void>;
+  markInstallmentPaid: (id: string, method: 'bank_transfer' | 'cash' | 'online', reference?: string) => Promise<void>;
 
   // Notifications (client-only, not persisted)
   addNotification: (n: Omit<Notification, 'id' | 'at' | 'read'>) => void;
   markAllRead: () => void;
 }
+
+const CACHE_KEY = 'tf_cache';
 
 export const useStore = create<AppStore>((set, get) => ({
   tenants: [],
@@ -59,10 +71,9 @@ export const useStore = create<AppStore>((set, get) => ({
   isLoading: false,
   error: null,
 
-  loadFromSupabase: async (client, userId) => {
-    // Show cached data instantly while fresh data loads
+  load: async () => {
     try {
-      const cached = localStorage.getItem(`tf_cache_${userId}`);
+      const cached = localStorage.getItem(CACHE_KEY);
       if (cached) {
         const { properties, tenants, expenses, installments } = JSON.parse(cached);
         set({ properties, tenants, expenses, installments, isLoading: true });
@@ -72,15 +83,12 @@ export const useStore = create<AppStore>((set, get) => ({
     } catch { set({ isLoading: true, error: null }); }
 
     try {
-      const properties = await db.fetchProperties(client, userId);
-      const [tenants, expenses, installments] = await Promise.all([
-        db.fetchTenants(client, userId, properties),
-        db.fetchExpenses(client, userId),
-        db.fetchInstallments(client, userId),
-      ]);
+      const { properties, tenants, expenses, installments } = await api<{
+        properties: Property[]; tenants: Tenant[]; expenses: Expense[]; installments: PaymentInstallment[];
+      }>('/api/bootstrap');
       set({ properties, tenants, expenses, installments, isLoading: false });
       try {
-        localStorage.setItem(`tf_cache_${userId}`, JSON.stringify({ properties, tenants, expenses, installments }));
+        localStorage.setItem(CACHE_KEY, JSON.stringify({ properties, tenants, expenses, installments }));
       } catch { /* storage full, ignore */ }
     } catch (e) {
       set({ isLoading: false, error: (e as Error).message });
@@ -93,18 +101,18 @@ export const useStore = create<AppStore>((set, get) => ({
   }),
 
   // ── Properties ──────────────────────────────────────────────────────────
-  addProperty: async (client, userId, data) => {
-    const property = await db.createProperty(client, userId, data);
+  addProperty: async (data) => {
+    const property = await api<Property>('/api/properties', { method: 'POST', body: JSON.stringify(data) });
     set(s => ({ properties: [property, ...s.properties] }));
   },
 
-  updateProperty: async (client, id, data) => {
-    const updated = await db.updateProperty(client, id, data);
+  updateProperty: async (id, data) => {
+    const updated = await api<Property>(`/api/properties/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
     set(s => ({ properties: s.properties.map(p => p.id === id ? updated : p) }));
   },
 
-  deleteProperty: async (client, id) => {
-    await db.deleteProperty(client, id);
+  deleteProperty: async (id) => {
+    await api(`/api/properties/${id}`, { method: 'DELETE' });
     set(s => ({
       properties: s.properties.filter(p => p.id !== id),
       tenants: s.tenants.filter(t => t.property_id !== id),
@@ -117,9 +125,9 @@ export const useStore = create<AppStore>((set, get) => ({
   },
 
   // ── Tenants ─────────────────────────────────────────────────────────────
-  addTenant: async (client, userId, data) => {
-    const { tenant, installments: newInstallments } = await db.createTenant(
-      client, userId, data, get().properties
+  addTenant: async (data) => {
+    const { tenant, installments: newInstallments } = await api<{ tenant: Tenant; installments: PaymentInstallment[] }>(
+      '/api/tenants', { method: 'POST', body: JSON.stringify(data) }
     );
     set(s => ({
       tenants: [tenant, ...s.tenants],
@@ -127,27 +135,31 @@ export const useStore = create<AppStore>((set, get) => ({
     }));
   },
 
-  updateTenant: async (client, id, data) => {
-    const updated = await db.updateTenant(client, id, data, get().properties);
+  updateTenant: async (id, data) => {
+    const updated = await api<Tenant>(`/api/tenants/${id}`, { method: 'PATCH', body: JSON.stringify(data) });
     set(s => ({ tenants: s.tenants.map(t => t.id === id ? updated : t) }));
   },
 
-  updateTenantRent: async (client, id, newAmount, note) => {
+  updateTenantRent: async (id, newAmount, note) => {
     const current = get().tenants.find(t => t.id === id);
     if (!current) return;
-    const updated = await db.updateTenantRent(client, id, newAmount, note, current);
+    const updated = await api<Tenant>(`/api/tenants/${id}/rent`, {
+      method: 'POST', body: JSON.stringify({ newAmount, note, currentTenant: current }),
+    });
     set(s => ({ tenants: s.tenants.map(t => t.id === id ? updated : t) }));
   },
 
-  renewTenantLease: async (client, id, newLeaseEnd) => {
+  renewTenantLease: async (id, newLeaseEnd) => {
     const current = get().tenants.find(t => t.id === id);
     if (!current) return;
-    const updated = await db.renewTenantLease(client, id, newLeaseEnd, current);
+    const updated = await api<Tenant>(`/api/tenants/${id}/lease`, {
+      method: 'POST', body: JSON.stringify({ newLeaseEnd, currentTenant: current }),
+    });
     set(s => ({ tenants: s.tenants.map(t => t.id === id ? updated : t) }));
   },
 
-  deleteTenant: async (client, id) => {
-    await db.deleteTenant(client, id);
+  deleteTenant: async (id) => {
+    await api(`/api/tenants/${id}`, { method: 'DELETE' });
     set(s => ({
       tenants: s.tenants.filter(t => t.id !== id),
       installments: s.installments.filter(i => i.tenant_id !== id),
@@ -155,19 +167,21 @@ export const useStore = create<AppStore>((set, get) => ({
   },
 
   // ── Expenses ────────────────────────────────────────────────────────────
-  addExpense: async (client, userId, data) => {
-    const expense = await db.createExpense(client, userId, data);
+  addExpense: async (data) => {
+    const expense = await api<Expense>('/api/expenses', { method: 'POST', body: JSON.stringify(data) });
     set(s => ({ expenses: [expense, ...s.expenses] }));
   },
 
-  deleteExpense: async (client, id) => {
-    await db.deleteExpense(client, id);
+  deleteExpense: async (id) => {
+    await api(`/api/expenses/${id}`, { method: 'DELETE' });
     set(s => ({ expenses: s.expenses.filter(e => e.id !== id) }));
   },
 
   // ── Installments ────────────────────────────────────────────────────────
-  markInstallmentPaid: async (client, id, method, reference) => {
-    const updated = await db.markInstallmentPaid(client, id, method, reference);
+  markInstallmentPaid: async (id, method, reference) => {
+    const updated = await api<PaymentInstallment>(`/api/installments/${id}`, {
+      method: 'POST', body: JSON.stringify({ method, reference }),
+    });
     set(s => ({
       installments: s.installments.map(i => i.id === id ? updated : i),
     }));

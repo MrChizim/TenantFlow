@@ -4,21 +4,11 @@ import AuthProvider from "@/components/providers/AuthProvider";
 
 export const metadata: Metadata = {
   title: {
-    default: 'TenantFlow — Property Management for Nigerian Landlords',
+    default: 'TenantFlow',
     template: '%s | TenantFlow',
   },
-  description: "Track tenants, log payments, and know exactly who owes you. Built for the way Nigerians actually rent — no lease contracts required.",
-  keywords: [
-    'property management Nigeria', 'landlord app Nigeria', 'tenant management software',
-    'rent tracking Nigeria', 'Nigerian landlord app', 'property management Lagos',
-    'rent collection app', 'tenant tracker', 'property manager Nigeria',
-    'landlord software Nigeria', 'real estate management Nigeria',
-  ],
-  authors: [{ name: 'TenantFlow' }],
-  creator: 'TenantFlow',
-  metadataBase: new URL('https://www.tenantflow.com.ng'),
-  alternates: { canonical: '/' },
-  robots: { index: true, follow: true, googleBot: { index: true, follow: true } },
+  description: 'Private property management for the family.',
+  robots: { index: false, follow: false },
   icons: {
     icon: '/favicon.png',
     apple: '/favicon.png',
@@ -26,22 +16,6 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'TenantFlow' },
   other: { 'mobile-web-app-capable': 'yes' },
-  openGraph: {
-    title: 'TenantFlow — Property Management for Nigerian Landlords',
-    description: 'Track tenants, log payments, and know exactly who owes you. Built for the way Nigerians actually rent.',
-    images: [{ url: '/og.png', width: 1200, height: 630, alt: 'TenantFlow' }],
-    type: 'website',
-    siteName: 'TenantFlow',
-    locale: 'en_NG',
-    url: 'https://www.tenantflow.com.ng',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'TenantFlow — Property Management for Nigerian Landlords',
-    description: 'Track tenants, log payments, and know exactly who owes you. Built for Nigeria.',
-    images: ['/og.png'],
-    site: '@tenantflow',
-  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

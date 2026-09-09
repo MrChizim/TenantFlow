@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { useStore } from '@/lib/store';
-import { createClient } from '@/lib/supabase/client';
 
 function Field({ label, value, onChange, placeholder, required, type = 'text' }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; required?: boolean; type?: string; }) {
   return (
@@ -60,8 +59,7 @@ export default function EditTenantPage({ params }: { params: Promise<{ id: strin
     setError('');
     setLoading(true);
     try {
-      const supabase = createClient();
-      await updateTenant(supabase, id, {
+      await updateTenant(id, {
         first_name: form.first_name, last_name: form.last_name,
         email: form.email, phone: form.phone,
         whatsapp: form.whatsapp || form.phone,

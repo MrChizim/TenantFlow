@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
   // Look up invite link
   const { data: link } = await admin
     .from('tenant_invite_links')
-    .select('user_id, property_id, expires_at')
+    .select('property_id, expires_at')
     .eq('token', token)
     .single();
 
@@ -63,7 +63,6 @@ export async function POST(req: NextRequest) {
 
   // Insert tenant
   const { error } = await admin.from('tenants').insert({
-    user_id: link.user_id,
     property_id: link.property_id,
     first_name: clip(first_name, 'first_name'),
     last_name: clip(last_name || '', 'last_name'),

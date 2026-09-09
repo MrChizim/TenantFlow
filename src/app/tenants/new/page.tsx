@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { useStore } from '@/lib/store';
-import { createClient } from '@/lib/supabase/client';
-import { canAddTenant } from '@/lib/plan';
 
 const UNIT_TYPES = [
   'Self Contain',
@@ -51,7 +49,6 @@ function Field({ label, value, onChange, placeholder, required, type = 'text' }:
 export default function NewTenantPage() {
   const router = useRouter();
   const properties = useStore(s => s.properties);
-  const tenants = useStore(s => s.tenants);
   const addTenant = useStore(s => s.addTenant);
   const addNotification = useStore(s => s.addNotification);
   const [loading, setLoading] = useState(false);
@@ -75,18 +72,7 @@ export default function NewTenantPage() {
     setError('');
     setLoading(true);
     try {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      const { allowed, reason } = await canAddTenant(supabase, user.id, tenants.length);
-      if (!allowed) {
-        setError(reason ?? 'Plan limit reached');
-        setLoading(false);
-        return;
-      }
-
-      await addTenant(supabase, user.id, {
+      await addTenant({
         first_name: form.first_name,
         last_name: form.last_name,
         email: form.email || '',
@@ -251,15 +237,7 @@ export default function NewTenantPage() {
         </div>
 
         {error && (
-          error.toLowerCase().includes('limit') || error.toLowerCase().includes('upgrade') || error.toLowerCase().includes('plan')
-            ? <div style={{ background: '#1C1B18', borderRadius: 14, padding: '18px 20px' }}>
-                <p style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Plan limit reached</p>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', marginBottom: 14 }}>{error}</p>
-                <Link href="/settings" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 10, background: 'linear-gradient(135deg,#C4992A,#E8C94A)', color: '#1C1B18', fontWeight: 700, fontSize: 13, textDecoration: 'none' }}>
-                  Upgrade to Pro
-                </Link>
-              </div>
-            : <p style={{ fontSize: 13, color: '#C0392B', background: '#FEF3F2', border: '1px solid #F9BDBA', borderRadius: 10, padding: '10px 14px' }}>{error}</p>
+          <p style={{ fontSize: 13, color: '#C0392B', background: '#FEF3F2', border: '1px solid #F9BDBA', borderRadius: 10, padding: '10px 14px' }}>{error}</p>
         )}
 
         <div style={{ display: 'flex', gap: 10 }}>

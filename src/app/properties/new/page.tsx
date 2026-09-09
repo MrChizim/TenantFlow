@@ -5,9 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Upload, X, ImageIcon } from 'lucide-react';
 import { useStore } from '@/lib/store';
-import { createClient } from '@/lib/supabase/client';
 import { ALL_STATES, getCities } from '@/lib/nigeria';
-import { canAddProperty } from '@/lib/plan';
 import type { PropertyType } from '@/types';
 
 const PROPERTY_TYPES: { value: PropertyType; label: string }[] = [
@@ -43,7 +41,6 @@ export default function NewPropertyPage() {
   const router = useRouter();
   const addProperty = useStore(s => s.addProperty);
   const addNotification = useStore(s => s.addNotification);
-  const properties = useStore(s => s.properties);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -77,16 +74,19 @@ export default function NewPropertyPage() {
     if (fileRef.current) fileRef.current.value = '';
   }
 
-  async function uploadImage(supabase: ReturnType<typeof createClient>, userId: string): Promise<string | undefined> {
+  async function uploadImage(): Promise<string | undefined> {
     if (!imageFile) return undefined;
     setUploadProgress(true);
-    const ext = imageFile.name.split('.').pop();
-    const path = `${userId}/${Date.now()}.${ext}`;
-    const { error: uploadError } = await supabase.storage.from('property-images').upload(path, imageFile);
-    setUploadProgress(false);
-    if (uploadError) throw uploadError;
-    const { data } = supabase.storage.from('property-images').getPublicUrl(path);
-    return data.publicUrl;
+    try {
+      const formData = new FormData();
+      formData.append('file', imageFile);
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? 'Failed to upload image');
+      return json.url as string;
+    } finally {
+      setUploadProgress(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -94,19 +94,8 @@ export default function NewPropertyPage() {
     setError('');
     setLoading(true);
     try {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      const { allowed, reason } = await canAddProperty(supabase, user.id, properties.length);
-      if (!allowed) {
-        setError(reason ?? 'Plan limit reached');
-        setLoading(false);
-        return;
-      }
-
-      const image_url = await uploadImage(supabase, user.id);
-      await addProperty(supabase, user.id, {
+      const image_url = await uploadImage();
+      await addProperty({
         name: form.name, address: form.address, city: form.city, state: form.state,
         type: form.type,
         description: form.description || undefined,
@@ -262,15 +251,7 @@ export default function NewPropertyPage() {
         </div>
 
         {error && (
-          error.toLowerCase().includes('limit') || error.toLowerCase().includes('upgrade') || error.toLowerCase().includes('plan')
-            ? <div style={{ background: '#1C1B18', borderRadius: 14, padding: '18px 20px' }}>
-                <p style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 4 }}>Plan limit reached</p>
-                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', marginBottom: 14 }}>{error}</p>
-                <Link href="/settings" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 10, background: 'linear-gradient(135deg,#C4992A,#E8C94A)', color: '#1C1B18', fontWeight: 700, fontSize: 13, textDecoration: 'none' }}>
-                  Upgrade to Pro
-                </Link>
-              </div>
-            : <p style={{ fontSize: 13, color: '#C0392B', background: '#FEF3F2', border: '1px solid #F9BDBA', borderRadius: 10, padding: '10px 14px' }}>{error}</p>
+          <p style={{ fontSize: 13, color: '#C0392B', background: '#FEF3F2', border: '1px solid #F9BDBA', borderRadius: 10, padding: '10px 14px' }}>{error}</p>
         )}
         <div style={{ display: 'flex', gap: 10 }}>
           <button type="submit" disabled={loading || uploadProgress} className="btn btn-dark">

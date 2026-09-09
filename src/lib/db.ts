@@ -1,5 +1,5 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Property, Tenant, Expense, PaymentInstallment, PaymentSchedule, PropertyType, RentHistoryEntry } from '@/types';
+import { getAdminClient } from '@/lib/supabase/admin';
+import type { Property, Tenant, Expense, PaymentInstallment, PaymentSchedule, RentHistoryEntry } from '@/types';
 
 // ─── Status derivation ──────────────────────────────────────────────────────
 
@@ -11,7 +11,7 @@ export function deriveStatus(leaseEnd?: string | null): Tenant['status'] {
   return 'active';
 }
 
-function generateInstallments(tenantId: string, userId: string, rentAmount: number, schedule: PaymentSchedule, leaseStart: string, leaseEnd: string): Omit<PaymentInstallment, 'id'>[] {
+function generateInstallments(tenantId: string, rentAmount: number, schedule: PaymentSchedule, leaseStart: string, leaseEnd: string): Omit<PaymentInstallment, 'id'>[] {
   if (schedule === 'annual') return [];
   const intervals: Record<string, number> = { biannual: 6, quarterly: 3, monthly: 1 };
   const monthsPerPeriod = intervals[schedule] ?? 12;
@@ -26,7 +26,7 @@ function generateInstallments(tenantId: string, userId: string, rentAmount: numb
       due_date: current.toISOString().split('T')[0],
       amount,
       paid: false,
-    } as Omit<PaymentInstallment, 'id'> & { user_id?: string });
+    } as Omit<PaymentInstallment, 'id'>);
     current = new Date(current);
     current.setMonth(current.getMonth() + monthsPerPeriod);
   }
@@ -35,24 +35,19 @@ function generateInstallments(tenantId: string, userId: string, rentAmount: numb
 
 // ─── Properties ─────────────────────────────────────────────────────────────
 
-export async function fetchProperties(client: SupabaseClient, userId: string): Promise<Property[]> {
-  const { data, error } = await client
+export async function fetchProperties(): Promise<Property[]> {
+  const { data, error } = await getAdminClient()
     .from('properties')
     .select('*')
-    .eq('user_id', userId)
     .order('created_at', { ascending: false });
   if (error) throw error;
   return (data ?? []) as Property[];
 }
 
-export async function createProperty(
-  client: SupabaseClient,
-  userId: string,
-  data: Omit<Property, 'id' | 'created_at'>
-): Promise<Property> {
-  const { data: row, error } = await client
+export async function createProperty(data: Omit<Property, 'id' | 'created_at'>): Promise<Property> {
+  const { data: row, error } = await getAdminClient()
     .from('properties')
-    .insert({ ...data, user_id: userId })
+    .insert(data)
     .select()
     .single();
   if (error) throw error;
@@ -60,11 +55,10 @@ export async function createProperty(
 }
 
 export async function updateProperty(
-  client: SupabaseClient,
   id: string,
-  data: Partial<Omit<Property, 'id' | 'created_at' | 'user_id'>>
+  data: Partial<Omit<Property, 'id' | 'created_at'>>
 ): Promise<Property> {
-  const { data: row, error } = await client
+  const { data: row, error } = await getAdminClient()
     .from('properties')
     .update(data)
     .eq('id', id)
@@ -74,18 +68,17 @@ export async function updateProperty(
   return row as Property;
 }
 
-export async function deleteProperty(client: SupabaseClient, id: string): Promise<void> {
-  const { error } = await client.from('properties').delete().eq('id', id);
+export async function deleteProperty(id: string): Promise<void> {
+  const { error } = await getAdminClient().from('properties').delete().eq('id', id);
   if (error) throw error;
 }
 
 // ─── Tenants ─────────────────────────────────────────────────────────────────
 
-export async function fetchTenants(client: SupabaseClient, userId: string, properties: Property[]): Promise<Tenant[]> {
-  const { data, error } = await client
+export async function fetchTenants(properties: Property[]): Promise<Tenant[]> {
+  const { data, error } = await getAdminClient()
     .from('tenants')
     .select('*')
-    .eq('user_id', userId)
     .order('created_at', { ascending: false });
   if (error) throw error;
   return (data ?? []).map(row => ({
@@ -96,19 +89,16 @@ export async function fetchTenants(client: SupabaseClient, userId: string, prope
 }
 
 export async function createTenant(
-  client: SupabaseClient,
-  userId: string,
   data: Omit<Tenant, 'id' | 'created_at' | 'status' | 'property'>,
   properties: Property[]
 ): Promise<{ tenant: Tenant; installments: PaymentInstallment[] }> {
   const insertData = {
     ...data,
-    user_id: userId,
     lease_start: data.lease_start || null,
     lease_end: data.lease_end || null,
     payment_schedule: data.payment_schedule || null,
   };
-  const { data: row, error } = await client
+  const { data: row, error } = await getAdminClient()
     .from('tenants')
     .insert(insertData)
     .select()
@@ -125,10 +115,10 @@ export async function createTenant(
   let installments: PaymentInstallment[] = [];
   if (data.payment_schedule && data.payment_schedule !== 'annual' && data.lease_start && data.lease_end) {
     const toInsert = generateInstallments(
-      tenant.id, userId, data.rent_amount, data.payment_schedule, data.lease_start, data.lease_end
-    ).map(i => ({ ...i, user_id: userId }));
+      tenant.id, data.rent_amount, data.payment_schedule, data.lease_start, data.lease_end
+    );
 
-    const { data: instRows, error: instError } = await client
+    const { data: instRows, error: instError } = await getAdminClient()
       .from('payment_installments')
       .insert(toInsert)
       .select();
@@ -140,12 +130,11 @@ export async function createTenant(
 }
 
 export async function updateTenant(
-  client: SupabaseClient,
   id: string,
-  data: Partial<Omit<Tenant, 'id' | 'created_at' | 'status' | 'property' | 'user_id'>>,
+  data: Partial<Omit<Tenant, 'id' | 'created_at' | 'status' | 'property'>>,
   properties: Property[]
 ): Promise<Tenant> {
-  const { data: row, error } = await client
+  const { data: row, error } = await getAdminClient()
     .from('tenants')
     .update(data)
     .eq('id', id)
@@ -159,13 +148,12 @@ export async function updateTenant(
   } as Tenant;
 }
 
-export async function deleteTenant(client: SupabaseClient, id: string): Promise<void> {
-  const { error } = await client.from('tenants').delete().eq('id', id);
+export async function deleteTenant(id: string): Promise<void> {
+  const { error } = await getAdminClient().from('tenants').delete().eq('id', id);
   if (error) throw error;
 }
 
 export async function updateTenantRent(
-  client: SupabaseClient,
   id: string,
   newAmount: number,
   note: string | undefined,
@@ -178,7 +166,7 @@ export async function updateTenantRent(
   };
   const newHistory = [...(currentTenant.rent_history ?? []), entry];
 
-  const { data: row, error } = await client
+  const { data: row, error } = await getAdminClient()
     .from('tenants')
     .update({ rent_amount: newAmount, rent_history: newHistory })
     .eq('id', id)
@@ -193,12 +181,11 @@ export async function updateTenantRent(
 }
 
 export async function renewTenantLease(
-  client: SupabaseClient,
   id: string,
   newLeaseEnd: string,
   currentTenant: Tenant
 ): Promise<Tenant> {
-  const { data: row, error } = await client
+  const { data: row, error } = await getAdminClient()
     .from('tenants')
     .update({ lease_end: newLeaseEnd })
     .eq('id', id)
@@ -214,54 +201,47 @@ export async function renewTenantLease(
 
 // ─── Expenses ────────────────────────────────────────────────────────────────
 
-export async function fetchExpenses(client: SupabaseClient, userId: string): Promise<Expense[]> {
-  const { data, error } = await client
+export async function fetchExpenses(): Promise<Expense[]> {
+  const { data, error } = await getAdminClient()
     .from('expenses')
     .select('*')
-    .eq('user_id', userId)
     .order('date', { ascending: false });
   if (error) throw error;
   return (data ?? []) as Expense[];
 }
 
-export async function createExpense(
-  client: SupabaseClient,
-  userId: string,
-  data: Omit<Expense, 'id' | 'created_at'>
-): Promise<Expense> {
-  const { data: row, error } = await client
+export async function createExpense(data: Omit<Expense, 'id' | 'created_at'>): Promise<Expense> {
+  const { data: row, error } = await getAdminClient()
     .from('expenses')
-    .insert({ ...data, user_id: userId })
+    .insert(data)
     .select()
     .single();
   if (error) throw error;
   return row as Expense;
 }
 
-export async function deleteExpense(client: SupabaseClient, id: string): Promise<void> {
-  const { error } = await client.from('expenses').delete().eq('id', id);
+export async function deleteExpense(id: string): Promise<void> {
+  const { error } = await getAdminClient().from('expenses').delete().eq('id', id);
   if (error) throw error;
 }
 
 // ─── Installments ────────────────────────────────────────────────────────────
 
-export async function fetchInstallments(client: SupabaseClient, userId: string): Promise<PaymentInstallment[]> {
-  const { data, error } = await client
+export async function fetchInstallments(): Promise<PaymentInstallment[]> {
+  const { data, error } = await getAdminClient()
     .from('payment_installments')
     .select('*')
-    .eq('user_id', userId)
     .order('due_date', { ascending: true });
   if (error) throw error;
   return (data ?? []) as PaymentInstallment[];
 }
 
 export async function markInstallmentPaid(
-  client: SupabaseClient,
   id: string,
   method: 'bank_transfer' | 'cash' | 'online',
   reference?: string
 ): Promise<PaymentInstallment> {
-  const { data: row, error } = await client
+  const { data: row, error } = await getAdminClient()
     .from('payment_installments')
     .update({
       paid: true,

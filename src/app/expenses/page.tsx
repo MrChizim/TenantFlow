@@ -3,7 +3,6 @@
 import { useState, useMemo } from 'react';
 import { Plus, Trash2, Wrench, Hammer, UserCheck, Scale, Zap, Shield, MoreHorizontal } from 'lucide-react';
 import { useStore } from '@/lib/store';
-import { createClient } from '@/lib/supabase/client';
 import { formatNaira, formatDate } from '@/lib/utils';
 import type { Expense } from '@/types';
 
@@ -39,10 +38,7 @@ function AddExpenseModal({ onClose, propertyId }: { onClose: () => void; propert
     setError('');
     setSaving(true);
     try {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-      await addExpense(supabase, user.id, {
+      await addExpense({
         property_id: form.property_id,
         category: form.category,
         description: form.description,
@@ -113,8 +109,7 @@ export default function ExpensesPage() {
   const [showModal, setShowModal] = useState(false);
 
   async function handleDelete(id: string) {
-    const supabase = createClient();
-    await deleteExpenseStore(supabase, id);
+    await deleteExpenseStore(id);
   }
 
   const filtered = useMemo(() =>

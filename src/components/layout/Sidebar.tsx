@@ -6,9 +6,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Building2, Users, CalendarClock,
   Bell, BarChart3, LogOut, PanelLeftClose, PanelLeftOpen,
-  Receipt, TrendingUp, Crown,
+  Receipt, TrendingUp,
 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
 
 const nav = [
   { href: '/dashboard',  label: 'Dashboard',  icon: LayoutDashboard },
@@ -29,8 +28,7 @@ export default function Sidebar({ collapsed, onToggle }: Props) {
   const W = collapsed ? 68 : 228;
 
   async function handleSignOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    await fetch('/api/logout', { method: 'POST' });
     router.push('/login');
   }
 
@@ -55,12 +53,12 @@ export default function Sidebar({ collapsed, onToggle }: Props) {
         justifyContent: collapsed ? 'center' : 'space-between',
       }}>
         {!collapsed && (
-          <Link href="/home" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+          <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
             <Image src="/logo.png" alt="TenantFlow" width={160} height={80} style={{ objectFit: 'contain', height: 52, width: 'auto' }} />
           </Link>
         )}
         {collapsed && (
-          <Link href="/home" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Link href="/dashboard" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Image src="/logo.png" alt="TenantFlow" width={80} height={80} style={{ objectFit: 'contain', width: 44, height: 44 }} />
           </Link>
         )}
@@ -119,13 +117,6 @@ export default function Sidebar({ collapsed, onToggle }: Props) {
 
       {/* Footer */}
       <div style={{ padding: collapsed ? '12px 8px' : '12px 10px', borderTop: '1px solid #ECEAE5', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <Link href="/home" title={collapsed ? 'Homepage' : undefined}
-          style={{ display: 'flex', alignItems: 'center', gap: collapsed ? 0 : 8, padding: collapsed ? '10px 0' : '8px 12px', justifyContent: collapsed ? 'center' : 'flex-start', borderRadius: 10, textDecoration: 'none', fontSize: 13, color: '#C8C5BE', transition: 'background 0.12s, color 0.12s' }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#F0EFEB'; (e.currentTarget as HTMLElement).style.color = '#6B6860'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#C8C5BE'; }}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-          {!collapsed && <span>Homepage</span>}
-        </Link>
         <button
           onClick={handleSignOut}
           title={collapsed ? 'Sign out' : undefined}
